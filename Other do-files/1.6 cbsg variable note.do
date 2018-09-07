@@ -103,9 +103,17 @@ forv i = 1/27 {
 }
 
 cap note Q2m: Did ${roster2_name} ever attend formal school? (including formal Islamic school)
-cap note Q2n1: What is the highest grade in which ${roster2_name} was enrolled?
+
+forv i = 1/27 {
+	cap note Q2n1_`i': What is the highest grade in which ${roster2_name_`i'} was enrolled?
+}
+
 cap note Q2n1_error: You stated that ${roster2_name} never attended school, but then indicated that ${roster2_name} attended some schooling in the next question. Please clarify
-cap note Q2n2: Enter highest grade level COMPLETED
+
+forv i = 1/27 {
+	cap note Q2n2_`i': Enter highest grade level COMPLETED
+}
+
 cap note Q2q: In the past SEVEN DAYS how many TOTAL HOURS did ${roster2_name} work on household chores, or tending to children, cooking, fetching water, or other household chores?
 cap note Q2r: In the past SEVEN DAYS, did ${roster2_name} do any work for pay, for profit, or for family gain, INCLUDING farm work or tending livestock, or poultry, or any occasional work, EVEN for one hour?
 cap note Q2s: Although ${roster2_name} did not work last week, does he/she have work from which he/she was temporarily absent?
