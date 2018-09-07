@@ -40,7 +40,7 @@ cap format %20.0g deviceid
 cap format %25.0g simserial
 cap format %12.0g sfnumber*
 
-* drop empty variables
+* drop empty variables.. search dropmiss and install dm89_2
 dropmiss *NA, force
 			
 * apply value labels
