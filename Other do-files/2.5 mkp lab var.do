@@ -76,7 +76,11 @@ forv i = 1/38 {
 }
 
 cap lab var Q2n1_error "You stated that ${roster2_name} never attended school, but then indicated that ${roster2_name} attended some schooling in the next question. Please clarify"
-cap lab var Q2n2 "Enter highest grade level COMPLETED"
+
+forv i = 1/38 {
+	cap lab var Q2n2_`i' "Enter highest grade level COMPLETED"
+}
+
 cap lab var Q2o1 "How many days was ${roster2_name}'s school in session over the past 2 weeks?"
 cap lab var Q2o2 "How many days did ${roster2_name} attend school in the past 2 weeks?"
 cap lab var Q2q "In the past SEVEN DAYS how many TOTAL HOURS did ${roster2_name} work on household chores, or tending to children, cooking, fetching water, or other household chores?"
