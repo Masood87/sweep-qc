@@ -104,12 +104,13 @@ cap lab var Q2w5_other "Other (please Specify)?"
 cap lab var Q2_estimate "Please estimate the total income for your entire household combined over the last 30 DAYS"
 *< end manual labelling
 
-cap lab var Q2x1 "remittances from those who do not live in the household?"
-cap lab var Q2x2 "income from lending funds to others?"
-cap lab var Q2x3 "rental income?"
-cap lab var Q2x4 "income from pensions?"
-cap lab var Q2x5 "income from zakat?"
-cap lab var Q2x6 "other income not yet discussed?"
+*** only in cbsg dataset
+*cap lab var Q2x1 "remittances from those who do not live in the household?"
+*cap lab var Q2x2 "income from lending funds to others?"
+*cap lab var Q2x3 "rental income?"
+*cap lab var Q2x4 "income from pensions?"
+*cap lab var Q2x5 "income from zakat?"
+*cap lab var Q2x6 "other income not yet discussed?"
 
 *> start manual labelling
 *cap lab var roster2_name1 "Roster2 name1"
