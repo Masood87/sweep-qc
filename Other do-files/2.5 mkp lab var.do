@@ -56,7 +56,11 @@ cap lab var rost2 "Roster 2: Details"
 cap lab var roster2_name "Roster2 name"
 cap lab var roster2_age "Roster2 age"
 cap lab var roster2note "I will now ask you a questions about ${roster2_name}, age ${roster2_age}"
-cap lab var Q2g "What is the relationship of ${roster2_name} to you?"
+
+forv i = 1/38 {
+	cap lab var Q2g_`i' "What is the relationship of ${roster2_name_`i'} to you?"
+}
+
 cap lab var Q2g_other "Other (please Specify)?"
 cap lab var Q2h "Is ${roster2_name} male or female?"
 cap lab var Q2i "What is the marital status of ${roster2_name}?"

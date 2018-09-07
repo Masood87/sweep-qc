@@ -6,7 +6,11 @@ cap lab val Q1m3_0 yesno
 cap lab val Q1m4_0 yesno
 cap lab val Q1m5_0 yesno
 cap lab val Q2c res_status
-cap lab val Q2g relationship
+
+forv i = 1/38 {
+	cap lab val Q2g_`i' relationship
+}
+
 cap lab val Q2h female
 cap lab val Q2i marital
 cap lab val Q2j yes_no
