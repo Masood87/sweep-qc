@@ -25,7 +25,8 @@ foreach v of varlist `r(varlist)' {
 	replace `v' = subinstr(`v', "۷", "7", .)
 	replace `v' = subinstr(`v', "۸", "8", .)
 	replace `v' = subinstr(`v', "۹", "9", .)
-
+	
+	* removes byte order mark (BOM) that prevents destring (https://en.wikipedia.org/wiki/Byte_order_mark)
 	destring `v', replace ignore("﻿")
 }
 
