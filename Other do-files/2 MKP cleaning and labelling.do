@@ -19,6 +19,7 @@ foreach v of varlist `r(varlist)' {
 	replace `v' = subinstr(`v', "۸", "8", .)
 	replace `v' = subinstr(`v', "۹", "9", .)
 
+	* removes byte order mark (BOM) that prevents destring (https://en.wikipedia.org/wiki/Byte_order_mark)
 	destring `v', replace ignore("﻿")
 }
 
@@ -27,7 +28,7 @@ foreach v of varlist `r(varlist)' {
 	replace `v' = "" if `v' == ".n"
 }
 
-* drop empty variables
+* drop empty variables.. search dropmiss and install dm89_2
 dropmiss *, force
 
 * apply value labels
