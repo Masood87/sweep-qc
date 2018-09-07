@@ -36,12 +36,12 @@
 	
 	* import raw CBSG data (csv format)
 *local cbsg_raw_data "SWEEP_CBSG_Final_2018_08_29_02_35_22_411855"
-local cbsg_raw_data "cbsg_subset__06Sep2018"
+local cbsg_raw_data "cbsg_subset__07Sep2018"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
 	* set directory
-cd "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
+cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 local cbsg_file "cbsg cleaned and labelled"
 	* list of variable names
 describe using "`cbsg_file'.dta", varlist
@@ -49,7 +49,7 @@ local var2 `r(varlist)'
 
 
 	* import raw MKP data (csv format)
-local mkp_raw_data "mkp_subset__06Sep2018"
+local mkp_raw_data "mkp_subset__07Sep2018"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cleaning and labelling.do"
