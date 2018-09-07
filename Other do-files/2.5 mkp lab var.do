@@ -65,12 +65,16 @@ cap lab var Q2k1 "Did ${roster2_name} reside outside of the home for more than 3
 cap lab var Q2k2 "Where does ${roster2_name} go?"
 cap lab var Q2k2_other "Other (please Specify)?"
 
-forv i = 1/27 {
+forv i = 1/38 {
 	cap lab var Q2l_`i' "Can ${roster2_name_`i'} read and write?"
 }
 
 cap lab var Q2m "Did ${roster2_name} ever attend formal school? (including formal Islamic school)"
-cap lab var Q2n1 "What is the highest grade in which ${roster2_name} was enrolled?"
+
+forv i = 1/38 {
+	cap lab var Q2n1_`i' "What is the highest grade in which ${roster2_name_`i'} was enrolled?"
+}
+
 cap lab var Q2n1_error "You stated that ${roster2_name} never attended school, but then indicated that ${roster2_name} attended some schooling in the next question. Please clarify"
 cap lab var Q2n2 "Enter highest grade level COMPLETED"
 cap lab var Q2o1 "How many days was ${roster2_name}'s school in session over the past 2 weeks?"

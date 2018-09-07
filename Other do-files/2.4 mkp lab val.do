@@ -13,12 +13,16 @@ cap lab val Q2j yes_no
 cap lab val Q2k1 yes_no
 cap lab val Q2k2 migration
 
-forv i = 1/27 {
+forv i = 1/38 {
 	cap lab val Q2l_`i' literacy
 }
 
 cap lab val Q2m curr_attend
-cap lab val Q2n1 education
+
+forv i = 1/38 {
+	cap lab val Q2n1_`i' education
+}
+
 cap lab val Q2r yes_no
 cap lab val Q2s yes_no
 cap lab val Q2t reasonnowork
