@@ -32,8 +32,8 @@
 	*=============================================================
 	
 	* assuming possibility of multiple rows for CBSG and one row for MKP respondents in each hhid
-
-	
+	*
+	*
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "cbsg_subset__07Sep2018"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
