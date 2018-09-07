@@ -28,6 +28,11 @@ foreach v of varlist `r(varlist)' {
 	replace `v' = "" if `v' == ".n"
 }
 
+* format variables
+cap format %20.0g deviceid
+cap format %25.0g simserial
+cap format %12.0g sfnumber*
+
 * drop empty variables.. search dropmiss and install dm89_2
 dropmiss *, force
 
