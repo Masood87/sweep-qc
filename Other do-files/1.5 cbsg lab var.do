@@ -97,7 +97,11 @@ cap lab var Q2j "Does ${roster2_name} have a tazkira?"
 cap lab var Q2k1 "Did ${roster2_name} reside outside of the home for more than 3 months of the past 12 months?"
 cap lab var Q2k2 "Where does ${roster2_name} go?"
 cap lab var Q2k2_other "Other (please Specify)?"
-cap lab var Q2l "Can ${roster2_name} read and write?"
+
+forv i = 1/27 {
+	cap lab var Q2l_`i' "Can ${roster2_name_`i'} read and write?"
+}
+
 cap lab var Q2m "Did ${roster2_name} ever attend formal school? (including formal Islamic school)"
 cap lab var Q2n1 "What is the highest grade in which ${roster2_name} was enrolled?"
 cap lab var Q2n1_error "You stated that ${roster2_name} never attended school, but then indicated that ${roster2_name} attended some schooling in the next question. Please clarify"
