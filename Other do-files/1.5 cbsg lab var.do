@@ -103,7 +103,11 @@ forv i = 1/27 {
 }
 
 cap lab var Q2m "Did ${roster2_name} ever attend formal school? (including formal Islamic school)"
-cap lab var Q2n1 "What is the highest grade in which ${roster2_name} was enrolled?"
+
+forv i = 1/27 {
+	cap lab var Q2n1_`i' "What is the highest grade in which ${roster2_name_`i'} was enrolled?"
+}
+
 cap lab var Q2n1_error "You stated that ${roster2_name} never attended school, but then indicated that ${roster2_name} attended some schooling in the next question. Please clarify"
 cap lab var Q2n2 "Enter highest grade level COMPLETED"
 cap lab var Q2q "In the past SEVEN DAYS how many TOTAL HOURS did ${roster2_name} work on household chores, or tending to children, cooking, fetching water, or other household chores?"

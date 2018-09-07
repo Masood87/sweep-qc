@@ -30,7 +30,11 @@ forv i = 1/27 {
 }
 
 cap lab val Q2m curr_attend
-cap lab val Q2n1 education
+
+forv i = 1/27 {
+	cap lab val Q2n1_`i' education
+}
+
 cap lab val Q2r yes_no
 cap lab val Q2s yes_no
 cap lab val Q2t reasonnowork
