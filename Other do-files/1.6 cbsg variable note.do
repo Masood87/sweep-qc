@@ -89,7 +89,11 @@ cap note rost2: Roster 2: Details
 cap note roster2_name: Roster2 name
 cap note roster2_age: Roster2 age
 cap note roster2note: I will now ask you a questions about ${roster2_name}, age ${roster2_age}
-cap note Q2g: What is the relationship of ${roster2_name} to you?
+
+forv i = 1/27 {
+	cap note Q2g_`i': What is the relationship of ${roster2_name_`i'} to you?
+}
+
 cap note Q2g_other: Other (please Specify)?
 cap note Q2h: Is ${roster2_name} male or female?
 cap note Q2i: What is the marital status of ${roster2_name}?
