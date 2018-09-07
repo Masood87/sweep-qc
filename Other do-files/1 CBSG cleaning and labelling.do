@@ -7,8 +7,11 @@
 * cleaning multiple response questions
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.2 cbsg cleaning multiple response variables.do"
 
-* clean n/a values and destring
+* an empty observation (except for hhid cell) appears when importing data from csv to Stata.
+* this code removes that line
 keep if sfdistrict != ""
+
+* clean n/a values and destring
 qui ds, has(type string)
 foreach v of varlist `r(varlist)' {
 	replace `v' = "" if `v' == "n/a"
