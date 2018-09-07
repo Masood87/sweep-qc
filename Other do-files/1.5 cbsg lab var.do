@@ -73,7 +73,11 @@ cap lab var note2 "A household is defined as a group of people who normally live
 cap lab var Q2a "According to this definition of a household, how many individuals live in the household?"
 cap lab var members "Roster 1: List of members"
 cap lab var Q2_memberid "ID for household member"
-cap lab var Q2b "Name of household member"
+
+forv i = 1/27 {
+	cap lab var Q2b_`i' "Name of household member `i'"
+}
+
 cap lab var Q2c "Is this member usually present in the household (and not part of another household)?"
 cap lab var Q2c_other "Other (please Specify)?"
 cap lab var Q2d "What is ${Q2b}'s age in completed years?"
