@@ -12,7 +12,11 @@ cap lab val Q2i marital
 cap lab val Q2j yes_no
 cap lab val Q2k1 yes_no
 cap lab val Q2k2 migration
-cap lab val Q2l literacy
+
+forv i = 1/27 {
+	cap lab val Q2l_`i' literacy
+}
+
 cap lab val Q2m curr_attend
 cap lab val Q2n1 education
 cap lab val Q2r yes_no
