@@ -1,7 +1,7 @@
 **** this do file cleans, labels, and prepares Stata file for CBSG data
 
 
-* rename variables
+* rename variables ****DOESN'T WORK BECAUSE OF VERY LONG VAR NAMES. INSTEAD USE R SCRIPT FOR RENAMING***
 *do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.1 cbsg_variable_names.do"
 
 * cleaning multiple response questions
