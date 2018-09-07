@@ -1,8 +1,8 @@
 **** this do file cleans, labels, and prepares Stata file for MKP data
 
 
-* rename variables
-do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2.1 mkp_variable_names.do"
+* rename variables ****DOESN'T WORK BECAUSE OF VERY LONG VAR NAMES. INSTEAD USE R SCRIPT FOR RENAMING***
+*do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2.1 mkp_variable_names.do"
 
 * clean n/a values and destring
 qui ds, has(type string)
