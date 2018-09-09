@@ -32,8 +32,8 @@
 	*=============================================================
 	
 	* assuming possibility of multiple rows for CBSG and one row for MKP respondents in each hhid
-	*
-	*
+
+
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "cbsg_subset__07Sep2018"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
@@ -70,21 +70,21 @@ local same : list same - idlist
 use "`cbsg_file'.dta", clear
 rename (`same') (=_cbsg)
 	* count attempts and last attempt is kept if multiple attempts are made to speak with CBSG member
-	egen attempts = count(hhid), by(hhid)
-	sort hhid attempts, stable
-	bys hhid: keep if _n == _N
+	*egen attempts = count(hhid), by(hhid)
+	*sort hhid attempts, stable
+	*bys hhid: keep if _n == _N
 save "`cbsg_file'_cbsg.dta", replace
 use "`mkp_file'.dta", clear
 rename (`same') (=_mkp)
 	* count attempts and last attempt is kept if multiple attempts are made to speak with CBSG member
-	egen attempts = count(hhid), by(hhid)
-	sort hhid attempts, stable
-	bys hhid: keep if _n == _N
+	*egen attempts = count(hhid), by(hhid)
+	*sort hhid attempts, stable
+	*bys hhid: keep if _n == _N
 save "`mkp_file'_mkp.dta", replace
 
 	* merge cbsg and mkp datasets by hhid
 use "`cbsg_file'_cbsg.dta", clear
-merge 1:1 hhid using "`mkp_file'_mkp.dta"
+merge m:m hhid using "`mkp_file'_mkp.dta"
 local date = subinstr("`c(current_date)'", " " , "", .)
 save "clean_merge_data__`date'.dta", replace
 
@@ -132,11 +132,11 @@ use "clean_merge_data__`date'.dta", clear
 	#d ;
 	lab def survey_status 
 	1 "Household not attempted"
-	2 "Household not located" 
-	3 "Survey unsuccessful, respondent unavailable" 
-	4 "Survey not consented" 
-	5 "CBSG survey incomplete, MKP survey not started" 
-	6 "CBSG survey complete, MKP survey not started" 
+	2 "Survey unsuccessful, respondent unavailable" 
+	3 "Survey not consented" 
+	4 "CBSG survey incomplete, MKP survey not started" 
+	5 "CBSG survey complete, MKP survey not started" 
+	6 "MKP survey complete, CBSG survey not uploaded"
 	7 "Both surveys incomplete" 
 	8 "CBSG survey complete, MKP survey incomplete" 
 	9 "Both survey's complete", modify;
@@ -159,23 +159,23 @@ use "clean_merge_data__`date'.dta", clear
 	* Survey Status Variable
 	gen survey_status_`date' = .
 	
-	* Household Not attempted
-*	replace survey_status_`date' = 1 if missing(Q1f1)
-	
 	* Household not located
-	replace survey_status_`date' = 2 if Q1f1 == 0
+	replace survey_status_`date' = 1 if Q1f1 == 0
 	
 	* Survey unsuccessful, respondent unavailable
-	replace survey_status_`date' = 3 if Q1l_consent == 0 & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
+	replace survey_status_`date' = 2 if Q1l_consent == 0 & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
 
 	* Survey not consented
-	replace survey_status_`date' = 4 if Q1l_consent == 0 & Q1l_whynot == 4 // 4) General refusal
+	replace survey_status_`date' = 3 if Q1l_consent == 0 & Q1l_whynot == 4 // 4) General refusal
 	
 	* CBSG survey incomplete, MKP survey not started
-	replace survey_status_`date' = 5 if Q1l_consent == 1 & missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
+	replace survey_status_`date' = 4 if Q1l_consent == 1 & missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
 	
 	* CBSG survey complete, MKP survey not started
-	replace survey_status_`date' = 6 if Q1l_consent == 1 & !missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
+	replace survey_status_`date' = 5 if Q1l_consent == 1 & !missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
+	
+	* MKP survey complete, CBSG survey not uploaded
+	replace survey_status_`date' = 6 if missing(Q1f1) & missing(Q10cbsg89) & !missing(Q10m6_mkp)
 	
 	* Both surveys incomplete
 	replace survey_status_`date' = 7 if Q1l_consent == 1 & missing(Q10cbsg89) & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
@@ -261,6 +261,14 @@ use "clean_merge_data__`date'.dta", clear
 	gen err_yellow_close_match = (pmatch > .9)
 	lab var err_yellow_close_match "More than 90% similarity in response to questions, which is considered very high"
 	
+	* (yellow) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
+	gen err_yellow_mkp_nt_missing = (Q1p == 1 & _merge == 3)
+	lab var err_yellow_mkp_nt_missing "CBSG report self (Q1p==1) and MKP questionnaire is filled"
+	
+	* (yellow) error 10: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
+	gen err_yellow_mkp_missing = (Q1p != 1 & _merge != 3)
+	lab var err_yellow_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
+	
 	* check skips
 	*gen skip_q8c = (!missing(Q8c2) & !Q8c1) // loop
 	*lab var skip_q8c "Skip logic for q8c"
@@ -313,6 +321,9 @@ use "clean_merge_data__`date'.dta", clear
 	
 	*Survey Status by District
 	tab sfdistrict_cbsg survey_status_`date', miss
+	
+	*Duplicate hhid
+	groups hhid, order(l) select(freq > 1)
 	
 	*Consent
 	tab Q1l_consent, miss
