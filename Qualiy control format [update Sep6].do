@@ -69,17 +69,17 @@ local same : list same - idlist
 	* add _cbsg and _mkp suffix to matching variables
 use "`cbsg_file'.dta", clear
 rename (`same') (=_cbsg)
-	* count attempts and last attempt is kept if multiple attempts are made to speak with CBSG member
-	*egen attempts = count(hhid), by(hhid)
-	*sort hhid attempts, stable
-	*bys hhid: keep if _n == _N
+	* In case of duplicate hhid in cbsg data, using the last record
+	egen dup_hhid_cbsg = count(hhid), by(hhid)
+	sort hhid start_cbsg, stable
+	bys hhid: keep if _n == _N
 save "`cbsg_file'_cbsg.dta", replace
 use "`mkp_file'.dta", clear
 rename (`same') (=_mkp)
-	* count attempts and last attempt is kept if multiple attempts are made to speak with CBSG member
-	*egen attempts = count(hhid), by(hhid)
-	*sort hhid attempts, stable
-	*bys hhid: keep if _n == _N
+	* In case of duplicate hhid in mkp data, using the last record
+	egen dup_hhid_mkp = count(hhid), by(hhid)
+	sort hhid start_mkp, stable
+	bys hhid: keep if _n == _N
 save "`mkp_file'_mkp.dta", replace
 
 	* merge cbsg and mkp datasets by hhid
@@ -87,7 +87,6 @@ use "`cbsg_file'_cbsg.dta", clear
 merge m:m hhid using "`mkp_file'_mkp.dta"
 local date = subinstr("`c(current_date)'", " " , "", .)
 save "clean_merge_data__`date'.dta", replace
-
 
 
 	* use cleaned and merged dataset
@@ -186,10 +185,7 @@ use "clean_merge_data__`date'.dta", clear
 	* Both surveys complete
 	replace survey_status_`date' = 9 if Q1l_consent == 1 & !missing(Q10cbsg89) & ((Q1p==1 & !missing(Q10m6_cbsg)) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
 	
-	
-	* add a stop to the code
-	*assert 
-	
+
 	lab val survey_status_`date' survey_status
 	tab survey_status_`date', miss
 	*note that completeness of survey will not depend on all errors discovered, but on key variables
