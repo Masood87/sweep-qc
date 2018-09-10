@@ -443,49 +443,5 @@ foreach i of local uniq_supervisor {
 	}
 */
 	
-	*=============================================================
-	*R3. Generate one report per household with errors
-	*=============================================================
-	cap mkdir "Reports/By Household ID"
-	
-levelsof hhid, local(uniq_hhid)
-foreach j of local uniq_hhid {
-	
-	preserve
-	
-	keep if hhid == `j'
-
-*>>>>>>> generate the log only if there is an error
-*>>>>>>> put report in dropbox, inside folders by date
-	
-	log using "Reports/By Household ID/Report_hhid-`j'__`date'.smcl", replace
-	*log using "$report/Report_hhid`j'_`date'"
-	
-	****************STATUS OF SURVEY***************************
-	di "hhid (`j')"
-	
-	tab survey_status_`date' if survey_status_`date' == 9, miss
-	
-	****************LIST OF ERRORS***************************
-	
-	foreach x of varlist err_red_* {
-			local `x'_lab: var lab `x'
-			if `x' == 1 & hhid == `j' {
-				di "(RED) `x': ``x'_lab'" 
-				}
-			}
-	foreach x of varlist err_yellow_* {
-			local `x'_lab: var lab `x'
-			if `x' == 1 & hhid == `j' {
-				di "(YELLOW) `x': ``x'_lab'" 
-				}
-			}
-	
-	log close
-	
-	restore
-	
-	}
-
 
 	
