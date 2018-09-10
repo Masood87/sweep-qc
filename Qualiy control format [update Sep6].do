@@ -203,13 +203,13 @@ use "clean_merge_data__`date'.dta", clear
 	* (red) error 1: flag extremely fast and extremely slow surveys
 	* extremely fast: <=30min for cbsg and <=20min for mkp
 	* extremely slow: >=4hrs for cbsg and >=3hrs for mkp
-	gen start_cbsg2 = clock(substr(start_cbsg, 1, 26), "YMD#hms"), a(start_cbsg)
-	gen start_mkp2 = clock(substr(start_mkp, 1, 26), "YMD#hms"), a(start_mkp)
-	gen end_cbsg2 = clock(substr(end_cbsg, 1, 26), "YMD#hms"), a(end_cbsg)
-	gen end_mkp2 = clock(substr(end_mkp, 1, 26), "YMD#hms"), a(end_mkp)
-	format start_cbsg2 start_mkp2 end_cbsg2 end_mkp2 %tc
-	gen interview_length_cbsg = (end_cbsg2 - start_cbsg2)/60000, a(end_cbsg2) // interview length in minutes
-	gen interview_length_mkp = (end_mkp2 - start_mkp2)/60000, a(end_mkp2)
+	gen start_date_cbsg = clock(substr(start_cbsg, 1, 20), "YMD#hms#"), a(start_cbsg)
+	gen start_date_mkp = clock(substr(start_mkp, 1, 20), "YMD#hms#"), a(start_mkp)
+	gen end_date_cbsg = clock(substr(end_cbsg, 1, 20), "YMD#hms#"), a(end_cbsg)
+	gen end_date_mkp = clock(substr(end_mkp, 1, 20), "YMD#hms#"), a(end_mkp)
+	format start_date_cbsg start_date_mkp end_date_cbsg end_date_mkp %tc
+	gen interview_length_cbsg = (end_date_cbsg - start_date_cbsg)/60000, a(end_date_cbsg) // interview length in minutes
+	gen interview_length_mkp = (end_date_mkp - start_date_mkp)/60000, a(end_date_mkp)
 	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30)
 	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20)
 	gen err_red_slow_intw_cbsg = (interview_length_cbsg >= 240)
@@ -390,6 +390,7 @@ use "clean_merge_data__`date'.dta", clear
 	*=============================================================
 	cap mkdir "Reports/By Supervisor"
 	cap mkdir "Reports/By Supervisor/`date'"
+	
 	cap drop _merge
 	rename enum_name1_cbsg enum_name1
 	merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
@@ -404,41 +405,42 @@ foreach i of local uniq_supervisor {
 	keep if supervisor_id == "`i'"
 	log using "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl", replace
 	
-	****************STATUS OF SURVEYS***************************
-	*OVERALL
-	tab survey_status_`date'
+	di "*****************************************************************"
+	di "**************** STATUS OF SURVEYS BY SUPERVISOR ****************"
+	di "*****************************************************************"
 	
-	*BY SUPERVISOR
-	tab supervisor_id survey_status_`date' //district variable missing
-
-	****************COMMON ERRORS (over 10% of households)***************************
+	tab hhid survey_status_`date', miss
+	
+	di "*****************************************************************"
+	di "**************** RED ERRORS : CALL BACK REQUIRED ****************"
+	di "*****************************************************************"
+	
 	foreach err of varlist err_red_* {
-		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
-		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab: var lab `err'
-		di "(RED) ``v'_round'% errors: ``v'_lab'"
+		di "(RED): ``v'_lab': List of all hhid"
+		list hhid if `err'==1 & survey_status_`date' == 9
 	}
+	
+	di "*****************************************************************"
+	di "************* YELLOW ERRORS : CALL BACK NOT REQUIRED ************"
+	di "*****************************************************************"
+	
 	foreach err of varlist err_yellow_* {
-		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
-		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab: var lab `err'
-		di "(YELLOW) ``v'_round'% errors: ``v'_lab'"
+		di "(YELLOW): ``v'_lab': List of all hhid"
+		list hhid if `err'==1 & survey_status_`date' == 9
 	}
-	/*
-	foreach x of varlist err_* {
-		qui sum `x' if !missing(`x'), detail
-		if `r(mean)' >= .1 {
-			local `v'_round=100*round(`r(mean)',.01)
-			local `v'_lab: var lab `x'
-			di "``v'_round'% errors: ``v'_lab'"
-			}
-		}*/
+	
+	
 	****************ENUMERATOR TRENDS***************************
+	
+	
 	
 	****************LIST OF Households requiring callbacks***************************
 	
-	
 	log close
+	translate "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
+	
 	restore
 	}
 */
