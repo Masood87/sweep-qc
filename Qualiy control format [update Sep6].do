@@ -258,7 +258,8 @@ use "clean_merge_data__`date'.dta", clear
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
 	
 	* (yellow) error 8: more than 90% similarity in responses
-	percentmatch Q*, gen(pmatch) idvar(hhid) matchedid(m_id)
+	qui ds, has(type numeric)
+	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
 	gen err_yellow_close_match = (pmatch > .9)
 	lab var err_yellow_close_match "More than 90% similarity in response to questions, which is considered very high"
 	
@@ -327,8 +328,11 @@ use "clean_merge_data__`date'.dta", clear
 	*Survey Status by District
 	tab sfdistrict_cbsg survey_status_`date', miss
 	
-	*Duplicate hhid
-	groups hhid, order(l) select(freq > 1)
+	*Duplicate hhid in CBSG data
+	list hhid dup_hhid_cbsg if dup_hhid_cbsg > 1 & !missing(dup_hhid_cbsg)
+	
+	*Duplicate hhid in MKP data
+	list hhid dup_hhid_mkp if dup_hhid_mkp > 1 & !missing(dup_hhid_mkp)
 	
 	*Consent
 	tab Q1l_consent, miss
@@ -378,8 +382,9 @@ use "clean_merge_data__`date'.dta", clear
 	mrtab Q6g1_* if survey_status_`date' == 9, poly sort des includemissing
 	
 	log close
-	
+	translate "Reports/Overview/Overview__`date'.smcl" "Reports/Overview/Overview__`date'.pdf", replace
 
+	
 	*=============================================================
 	*R2. Generate one report per supervisor
 	*=============================================================
