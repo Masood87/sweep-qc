@@ -23,6 +23,7 @@
 			global mystart "C:\Users\"
 			}		
 	
+	local date = subinstr("`c(current_date)'", " " , "", .)
 	global baseline "$mystart/"
 	global raw="$baseline/raw data"
 	global report="$baseline/report"
@@ -35,7 +36,7 @@
 
 
 	* import raw CBSG data (csv format)
-local cbsg_raw_data "cbsg_subset__07Sep2018"
+local cbsg_raw_data "cbsg_subset__`date'"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
@@ -48,7 +49,7 @@ local var2 `r(varlist)'
 
 
 	* import raw MKP data (csv format)
-local mkp_raw_data "mkp_subset__07Sep2018"
+local mkp_raw_data "mkp_subset__`date'"
 import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cleaning and labelling.do"
@@ -90,7 +91,6 @@ save "clean_merge_data__`date'.dta", replace
 
 
 	* use cleaned and merged dataset
-local date = subinstr("`c(current_date)'", " " , "", .)
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 use "clean_merge_data__`date'.dta", clear
 	
@@ -219,10 +219,15 @@ use "clean_merge_data__`date'.dta", clear
 	lab var err_red_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
 	lab var err_red_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
 	
-	* (red) error 2: check if number of household (Q1n) = names provided (Q2b)
-	egen length_names_hh_members = rownonmiss(Q2b*), s
-	gen err_red_hh_members = (length_names_hh_members != Q1n) if !missing(length_names_hh_members) & !missing(Q1n)
-	lab var err_red_hh_members "Number of hh members and number of name entries are unequal"
+	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 2
+	gen err_red_numhhmem = ((Q1n+2)<Q2a | (Q1n-2)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
+	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 2"
+	
+	* (red) error 3: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
+	gen err_red_income_cbsg = (Q2_estimate_cbsg>0 & Q2_estimate_cbsg<1000)
+	gen err_red_income_mkp = (Q2_estimate_mkp>0 & Q2_estimate_mkp<1000)
+	lab var err_red_income_cbsg "Verify total hh income from past 30 days in CBSG interview (Q2_estimate): reported value was >0 & <1000"
+	lab var err_red_income_mkp "Verify total hh income from past 30 days in MKP interview (Q2_estimate): reported value was >0 & <1000"
 
 	* (yellow) error 3: multiple years of schooling but cannot read or write
 	*gen err_educated_cantread_cbsg = (inrange(Q2n1_cbsg, 2, 6) & Q2l == 4 & Q2n2 > 9)
@@ -265,9 +270,9 @@ use "clean_merge_data__`date'.dta", clear
 	gen err_yellow_mkp_missing = (Q1p != 1 & _merge != 3)
 	lab var err_yellow_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
-	* (red) error 10: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
-	gen err_red_income = (Q2_estimate>0 & Q2_estimate<1000)
-	lab var err_red_income "Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000"
+	* (yellow) Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
+	gen err_yellow_save = (Q7k1>Q7n) if Q7k1<. & Q7k1!=99 & Q7k1!=98 & Q7n<. & Q7n!=99 & Q7n!=98
+	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
 	
 	* check skips
 	*gen skip_q8c = (!missing(Q8c2) & !Q8c1) // loop
@@ -379,9 +384,10 @@ use "clean_merge_data__`date'.dta", clear
 	*R2. Generate one report per supervisor
 	*=============================================================
 	cap mkdir "Reports/By Supervisor"
+	cap mkdir "Reports/By Supervisor/`date'"
 	cap drop _merge
 	rename enum_name1_cbsg enum_name1
-merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
+	merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
 	drop if _merge==2
 	rename supervisor1_cbsg supervisor_id
 
@@ -391,17 +397,15 @@ foreach i of local uniq_supervisor {
 	
 	preserve
 	keep if supervisor_id == "`i'"
-	log using "Reports/By Supervisor/Report_`i'_`date'.smcl", replace
-	*log using "$report/Report_sup`i'_`date'"
+	log using "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl", replace
 	
 	****************STATUS OF SURVEYS***************************
 	*OVERALL
 	tab survey_status_`date'
 	
-	*BY DISTRICT
-*>>>>>>>>>
-	*tab district survey_status_`date' //district variable missing
-*>>>>>>>>>
+	*BY SUPERVISOR
+	tab supervisor_id survey_status_`date' //district variable missing
+
 	****************COMMON ERRORS (over 10% of households)***************************
 	foreach err of varlist err_red_* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
