@@ -265,6 +265,10 @@ use "clean_merge_data__`date'.dta", clear
 	gen err_yellow_mkp_missing = (Q1p != 1 & _merge != 3)
 	lab var err_yellow_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
+	* (red) error 10: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
+	gen err_red_income = (Q2_estimate>0 & Q2_estimate<1000)
+	lab var err_red_income "Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000"
+	
 	* check skips
 	*gen skip_q8c = (!missing(Q8c2) & !Q8c1) // loop
 	*lab var skip_q8c "Skip logic for q8c"
