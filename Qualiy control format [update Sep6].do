@@ -42,7 +42,7 @@ import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
 	* set directory
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local cbsg_file "cbsg cleaned and labelled"
+local cbsg_file "baseline/cbsg cleaned and labelled"
 	* list of variable names
 describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
@@ -55,7 +55,7 @@ import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`mkp_raw_data'
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cleaning and labelling.do"
 	* set directory
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local mkp_file "mkp cleaned and labelled"
+local mkp_file "baseline/mkp cleaned and labelled"
 	* list of variable names
 describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
@@ -68,24 +68,24 @@ local same : list same - idlist
 
 
 	* add _cbsg and _mkp suffix to matching variables
-use "`cbsg_file'.dta", clear
+use "baseline/`cbsg_file'.dta", clear
 rename (`same') (=_cbsg)
 	* In case of duplicate hhid in cbsg data, using the last record
 	egen dup_hhid_cbsg = count(hhid), by(hhid)
 	sort hhid start_cbsg, stable
 	bys hhid: keep if _n == _N
-save "`cbsg_file'_cbsg.dta", replace
-use "`mkp_file'.dta", clear
+save "baseline/`cbsg_file'_noduphhid.dta", replace
+use "baseline/`mkp_file'.dta", clear
 rename (`same') (=_mkp)
 	* In case of duplicate hhid in mkp data, using the last record
 	egen dup_hhid_mkp = count(hhid), by(hhid)
 	sort hhid start_mkp, stable
 	bys hhid: keep if _n == _N
-save "`mkp_file'_mkp.dta", replace
+save "baseline/`mkp_file'_noduphhid.dta", replace
 
 	* merge cbsg and mkp datasets by hhid
-use "`cbsg_file'_cbsg.dta", clear
-merge m:m hhid using "`mkp_file'_mkp.dta"
+use "baseline/`cbsg_file'_noduphhid.dta", clear
+merge m:m hhid using "baseline/`mkp_file'_noduphhid.dta"
 local date = subinstr("`c(current_date)'", " " , "", .)
 save "clean_merge_data__`date'.dta", replace
 
@@ -391,10 +391,18 @@ use "clean_merge_data__`date'.dta", clear
 	cap mkdir "Reports/By Supervisor"
 	cap mkdir "Reports/By Supervisor/`date'"
 	
+	gen enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1_cbsg == enum_name1_mkp & enum_name1_cbsg != enum_name2_cbsg
+	gen enum_name2 = enum_name2_cbsg if enum_name2_cbsg != "" & enum_name2_cbsg == enum_name2_mkp & enum_name1_cbsg != enum_name2_cbsg
+	replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1 == "" & Q1p == 1
+	replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg == enum_name2_mkp & enum_name2_cbsg == enum_name1_mkp & enum_name1 == ""
+	replace enum_name1 = enum_name1_cbsg if enum_name1_mkp == "" & enum_name2_mkp == "" & enum_name1 == ""
+	replace enum_name1 = enum_name1_mkp if enum_name1_cbsg == "" & enum_name2_cbsg == "" & enum_name1 == ""
+	drop enum_*_cbsg enum_*_mkp enum_name2
+	
 	cap drop _merge
-	rename enum_name1_cbsg enum_name1
 	merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
 	drop if _merge==2
+	drop _merge
 	rename supervisor1_cbsg supervisor_id
 
 levelsof supervisor_id, local(uniq_supervisor)
