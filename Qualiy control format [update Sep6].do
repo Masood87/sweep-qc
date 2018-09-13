@@ -94,6 +94,7 @@ use "clean_merge_data__`date'.dta", clear
 	* merge with sampling frame to check how often the household selected was part of intended sample
 drop _merge
 merge 1:1 hhid using "sampling frame.dta"
+drop if _merge == 2
 	
 	/*=============================================================
 	*1. Code missing values
@@ -327,7 +328,7 @@ merge 1:1 hhid using "sampling frame.dta"
 	tab survey_status_`date', miss
 	
 	*Survey Status by District
-	tab sfdistrict_cbsg survey_status_`date', miss
+	tab district survey_status_`date', miss
 	
 	*Order Priority from Sampling Frame
 	tab order_priority, miss
