@@ -15,13 +15,13 @@
 			}
 	if "$user"=="Smita" {
 			global mystart "C:\Users\"
-			}	
+			}
 	if "$user"=="Virginia" {
 			global mystart "C:\Users\"
 			}
 	if "$user"=="Shubha" {
 			global mystart "C:\Users\"
-			}		
+			}
 	
 	local date = subinstr("`c(current_date)'", " " , "", .)
 	global baseline "$mystart/"
@@ -31,9 +31,6 @@
 	*=============================================================
 	*0. Merge MKP and CBSG Participant survey data, such that each row corresponds to one hhid
 	*=============================================================
-	
-	* assuming possibility of multiple rows for CBSG and one row for MKP respondents in each hhid
-
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "cbsg_subset__`date'"
@@ -42,7 +39,7 @@ import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
 	* set directory
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local cbsg_file "baseline/cbsg cleaned and labelled"
+local cbsg_file "baseline/cbsg cleaned and labelled `date'"
 	* list of variable names
 describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
@@ -55,7 +52,7 @@ import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`mkp_raw_data'
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cleaning and labelling.do"
 	* set directory
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local mkp_file "baseline/mkp cleaned and labelled"
+local mkp_file "baseline/mkp cleaned and labelled `date'"
 	* list of variable names
 describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
@@ -68,24 +65,24 @@ local same : list same - idlist
 
 
 	* add _cbsg and _mkp suffix to matching variables
-use "baseline/`cbsg_file'.dta", clear
+use "`cbsg_file'.dta", clear
 rename (`same') (=_cbsg)
 	* In case of duplicate hhid in cbsg data, using the last record
 	egen dup_hhid_cbsg = count(hhid), by(hhid)
 	sort hhid start_cbsg, stable
 	bys hhid: keep if _n == _N
-save "baseline/`cbsg_file'_noduphhid.dta", replace
-use "baseline/`mkp_file'.dta", clear
+save "`cbsg_file'_noduphhid.dta", replace
+use "`mkp_file'.dta", clear
 rename (`same') (=_mkp)
 	* In case of duplicate hhid in mkp data, using the last record
 	egen dup_hhid_mkp = count(hhid), by(hhid)
 	sort hhid start_mkp, stable
 	bys hhid: keep if _n == _N
-save "baseline/`mkp_file'_noduphhid.dta", replace
+save "`mkp_file'_noduphhid.dta", replace
 
 	* merge cbsg and mkp datasets by hhid
-use "baseline/`cbsg_file'_noduphhid.dta", clear
-merge m:m hhid using "baseline/`mkp_file'_noduphhid.dta"
+use "`cbsg_file'_noduphhid.dta", clear
+merge m:m hhid using "`mkp_file'_noduphhid.dta"
 local date = subinstr("`c(current_date)'", " " , "", .)
 save "clean_merge_data__`date'.dta", replace
 
@@ -93,6 +90,10 @@ save "clean_merge_data__`date'.dta", replace
 	* use cleaned and merged dataset
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 use "clean_merge_data__`date'.dta", clear
+
+	* merge with sampling frame to check how often the household selected was part of intended sample
+drop _merge
+merge 1:1 hhid using "sampling frame.dta"
 	
 	/*=============================================================
 	*1. Code missing values
@@ -258,10 +259,10 @@ use "clean_merge_data__`date'.dta", clear
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
 	
 	* (yellow) error 8: more than 90% similarity in responses
-	qui ds, has(type numeric)
-	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
-	gen err_yellow_close_match = (pmatch > .9)
-	lab var err_yellow_close_match "More than 90% similarity in response to questions, which is considered very high"
+	*qui ds Q*, has(type numeric)
+	*percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
+	*gen err_yellow_close_match = (pmatch > .9)
+	*lab var err_yellow_close_match "More than 90% similarity in response to questions, which is considered very high"
 	
 	* (yellow) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
 	gen err_yellow_mkp_nt_missing = (Q1p == 1 & _merge == 3)
@@ -327,6 +328,9 @@ use "clean_merge_data__`date'.dta", clear
 	
 	*Survey Status by District
 	tab sfdistrict_cbsg survey_status_`date', miss
+	
+	*Order Priority from Sampling Frame
+	tab order_priority, miss
 	
 	*Duplicate hhid in CBSG data
 	list hhid dup_hhid_cbsg if dup_hhid_cbsg > 1 & !missing(dup_hhid_cbsg)
@@ -403,7 +407,7 @@ use "clean_merge_data__`date'.dta", clear
 	merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
 	drop if _merge==2
 	drop _merge
-	rename supervisor1_cbsg supervisor_id
+	rename enum_supervisor supervisor_id
 
 levelsof supervisor_id, local(uniq_supervisor)
 
