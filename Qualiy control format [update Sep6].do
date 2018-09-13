@@ -388,7 +388,6 @@ merge 1:1 hhid using "sampling frame.dta"
 	log close
 	translate "Reports/Overview/Overview__`date'.smcl" "Reports/Overview/Overview__`date'.pdf", replace
 
-	
 	*=============================================================
 	*R2. Generate one report per supervisor
 	*=============================================================
@@ -417,12 +416,14 @@ foreach i of local uniq_supervisor {
 	keep if supervisor_id == "`i'"
 	log using "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl", replace
 	
+	di ""
 	di "*****************************************************************"
 	di "**************** STATUS OF SURVEYS BY SUPERVISOR ****************"
 	di "*****************************************************************"
 	
 	tab hhid survey_status_`date', miss
 	
+	di ""
 	di "*****************************************************************"
 	di "**************** RED ERRORS : CALL BACK REQUIRED ****************"
 	di "*****************************************************************"
@@ -433,6 +434,7 @@ foreach i of local uniq_supervisor {
 		list hhid if `err'==1 & survey_status_`date' == 9
 	}
 	
+	di ""
 	di "*****************************************************************"
 	di "************* YELLOW ERRORS : CALL BACK NOT REQUIRED ************"
 	di "*****************************************************************"
@@ -443,10 +445,32 @@ foreach i of local uniq_supervisor {
 		list hhid if `err'==1 & survey_status_`date' == 9
 	}
 	
+	di ""
+	di "*****************************************************************"
+	di "*******************ENUMERATOR TRENDS*****************************"
+	di "*****************************************************************"
 	
-	****************ENUMERATOR TRENDS***************************
-	
-	
+	#d ;
+	di "(RED) 1. err_red_missing_datetime: `: var lab err_red_missing_datetime'";
+	di "(RED) 2. err_red_qui_intw_cbsg: `: var lab err_red_qui_intw_cbsg'";
+	di "(RED) 3. err_red_qui_intw_mkp: `: var lab err_red_qui_intw_mkp'";
+	di "(RED) 4. err_red_slow_intw_cbsg: `: var lab err_red_slow_intw_cbsg'";
+	di "(RED) 5. err_red_slow_intw_mkp: `: var lab err_red_slow_intw_mkp'";
+	di "(RED) 6. err_red_numhhmem: `: var lab err_red_numhhmem'";
+	di "(RED) 7. err_red_income_cbsg: `: var lab err_red_income_cbsg'";
+	di "(RED) 8. err_red_income_mkp: `: var lab err_red_income_mkp'";
+	di "(RED) 9. err_red_cbsg_notmmr: `: var lab err_red_cbsg_notmmr'";
+	tabstat err_red_missing_datetime
+			err_red_qui_intw_cbsg
+			err_red_qui_intw_mkp
+			err_red_slow_intw_cbsg
+			err_red_slow_intw_mkp
+			err_red_numhhmem
+			err_red_income_cbsg
+			err_red_income_mkp
+			err_red_cbsg_notmmr, long nototal column(statistics) by(enum_name1) labelwidth(32);
+
+	#d cr
 	
 	****************LIST OF Households requiring callbacks***************************
 	
