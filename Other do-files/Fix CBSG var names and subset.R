@@ -4,7 +4,7 @@ library(tidyverse)
 rm(list = ls())
 
 # import the data
-filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_CBSG_Final_2018_09_13_00_27_54_678788.csv"
+filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_CBSG_Final_2018_09_14_02_28_03_160339.csv"
 cbsg <- read_csv(filename)
 
 # parsing variable names and constract new variable names
@@ -47,9 +47,10 @@ colnames(cbsg) <- newvarnames$newnames
 cbsg$simserial <- gsub("n/a", "", cbsg$simserial)
 cbsg$simserial <- gsub("[a-zA-Z]", "", cbsg$simserial)
 
+# remove objects
+rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames"))
+
 # subset
-cbsg <- select(cbsg, hhid, sfdistrict, contains("enum"), Q1f1, contains("Q1l"), Q1p, Q1r1, Q1r3, start, end, deviceid, simserial, contains("sfnumber"), Q2a, contains("Q2b"), contains("Q2l"), Q1n, contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q4b1, Q4b2, Q4c, Q5a, contains("Q6g1"), Q7g1, Q7f1, Q7f2, Q2_estimate, starts_with("Q2x"), starts_with("Q5m"), Q6a, Q6b, Q6c, Q6d, Q6e, Q6f, Q7k1, Q7n, starts_with("Q10"))
+cbsg <- select(cbsg, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q4b1, Q4b2, Q4c, Q5a, contains("Q6g1"), Q7g1, Q7f1, Q7f2, Q2_estimate, starts_with("Q2x"), starts_with("Q5m"), Q6a, Q6b, Q6c, Q6d, Q6e, Q6f, Q7k1, Q7n, starts_with("Q10"))
 write_csv(cbsg, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%d%b%Y"), ".csv"))
 
-# export updated cbsg file
-# df %>% write_csv(paste0(word(filename, 1, sep = "\\."), "_updatevnames.csv"))
