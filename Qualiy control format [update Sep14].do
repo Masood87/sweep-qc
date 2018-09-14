@@ -274,9 +274,9 @@ drop if _merge == 2
 	note err_red_numhhmem: Number of household members differs between MKP and CBSG surveys by more than 1
 	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
 	
-	* (red) error 2: check if number of household (Q1n) = names provided in the roster (Q2b)
+	* (red) error 2: check if number of household (Q2a) = names provided in the roster (Q2b)
 	egen length_names_hh_members = rownonmiss(Q2b*), s
-	gen err_red_hh_members = (length_names_hh_members != Q1n) if !missing(length_names_hh_members) & !missing(Q1n)
+	gen err_red_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
 	note err_red_hh_members: Number of hh members and number of name entries are unequal
 	lab var err_red_hh_members "Number of hh members and number of name entries are unequal"
 
@@ -343,6 +343,13 @@ drop if _merge == 2
 	note err_yellow_save: Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
 	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
 	
+	* aggregate error variables
+	egen error_red = rowtotal(err_red_*)
+	lab var error_red "Number of red error variables"
+	gen error_red_dummy = (error_red > 0)
+	lab def err 1 "Has error" 0 "Doesn't have error"
+	lab val error_red_dummy err
+
 	* check skips
 	*gen skip_q8c = (!missing(Q8c2) & !Q8c1) // loop
 	*lab var skip_q8c "Skip logic for q8c"
@@ -424,7 +431,7 @@ drop if _merge == 2
 	tab Q1p if survey_status_`date' == 9, miss
 	
 	*Number of Household Members
-	sum Q1n if survey_status_`date' == 9, detai
+	sum Q2a if survey_status_`date' == 9, detai
 	
 	*During the last 12 MONTHS did you always have enough food for your household?
 	tab Q4c if survey_status_`date' == 9, miss
@@ -503,17 +510,9 @@ foreach i of local uniq_supervisor {
 	di "*****************************************************************"
 	di "*******************ENUMERATOR TRENDS*****************************"
 	di "*****************************************************************"
-	
-	egen error_red = rowtotal(err_red_*)
-	
+		
 	tab error_red, miss
-	
-	gen error_red_dummy = (error_red > 0)
-	lab def err 1 "Has error" 0 "Doesn't have error"
-	lab val error_red_dummy err
-
 	tab enum_name1 error_red_dummy, miss row
-	
 	
 *>>> n out of N enum fail any error >>>> anymatch if any fail
 *>>> n out of N error fail
