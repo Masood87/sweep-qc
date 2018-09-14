@@ -3,7 +3,7 @@ library(tidyverse)
 rm(list = ls())
 
 # import the data
-filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_MPK_Final_2018_09_13_02_33_15_900634.csv"
+filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_MPK_Final_2018_09_14_02_16_18_700739.csv"
 mkp <- read_csv(filename)
 
 # parsing variable names and constract new variable names
@@ -38,9 +38,11 @@ colnames(mkp) <- newvarnames$newnames
 mkp$simserial <- gsub("n/a", "", mkp$simserial)
 mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 
+# remove objects
+rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames"))
+
 # subset
-# keep all variables until q2b
-mkp <- select(mkp, hhid, sfdistrict, start, end, deviceid, simserial, contains("sfnumber"), contains("enum"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q4b1, Q4b2, Q5a, Q2_estimate, contains("Q2x"), Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"))
+mkp <- select(mkp, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q2_estimate, contains("Q2x"), Q4b1, Q4b2, Q5a, Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"))
 write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"))
 
 

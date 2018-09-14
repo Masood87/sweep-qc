@@ -41,7 +41,7 @@ do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cl
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 local cbsg_file "baseline/cbsg cleaned and labelled `date'"
 	* list of variable names
-describe using "`cbsg_file'.dta", varlist
+qui describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
 
 
@@ -54,7 +54,7 @@ do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cle
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 local mkp_file "baseline/mkp cleaned and labelled `date'"
 	* list of variable names
-describe using "`mkp_file'.dta", varlist
+qui describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
 
 
@@ -63,36 +63,71 @@ local same : list var2 & var1
 local idlist hhid
 local same : list same - idlist
 
-
+* CBSG: Remove duplicate and rename variables
 	* add _cbsg and _mkp suffix to matching variables
 use "`cbsg_file'.dta", clear
 rename (`same') (=_cbsg)
-	* In case of duplicate hhid in cbsg data, using the last record
-	egen dup_hhid_cbsg = count(hhid), by(hhid)
-	sort hhid start_cbsg, stable
-	bys hhid: keep if _n == _N
+	* drop empty observations if any
+drop if missing(hhid)
+	* In case of duplicate hhid in cbsg data, use the most complete record. If equally complete, use the last record
+egen dup_hhid_cbsg = count(hhid), by(hhid)
+qui ds Q*, has(type numeric)
+egen rowmiss = rcount(`r(varlist)'), c(missing(@))
+qui ds Q*, has(type string)
+egen rowmty = rcount(`r(varlist)'), c(@=="")
+egen miss_values = rowtotal(rowmiss rowmty)
+sort hhid miss_values start_cbsg
+bysort hhid: keep if _n == _N
+bys hhid: keep if _n == _N
+compress
 save "`cbsg_file'_noduphhid.dta", replace
+
+* MKP: Remove duplicate and rename variables
+	* add _cbsg and _mkp suffix to matching variables
 use "`mkp_file'.dta", clear
 rename (`same') (=_mkp)
-	* In case of duplicate hhid in mkp data, using the last record
-	egen dup_hhid_mkp = count(hhid), by(hhid)
-	sort hhid start_mkp, stable
-	bys hhid: keep if _n == _N
+	* drop empty observations if any
+drop if missing(hhid)
+	* In case of duplicate hhid in cbsg data, use the most complete record. If equally complete, use the last record
+egen dup_hhid_mkp = count(hhid), by(hhid)
+qui ds Q*, has(type numeric)
+egen rowmiss = rcount(`r(varlist)'), c(missing(@))
+qui ds Q*, has(type string)
+egen rowmty = rcount(`r(varlist)'), c(@=="")
+egen miss_values = rowtotal(rowmiss rowmty)
+sort hhid miss_values start_mkp
+bysort hhid: keep if _n == _N
+bys hhid: keep if _n == _N
+compress
 save "`mkp_file'_noduphhid.dta", replace
 
-	* merge cbsg and mkp datasets by hhid
+* MERGE cbsg and mkp datasets by hhid. merge 1-to-1
 use "`cbsg_file'_noduphhid.dta", clear
 merge m:m hhid using "`mkp_file'_noduphhid.dta"
 local date = subinstr("`c(current_date)'", " " , "", .)
+rename _merge match_bw_cbsg_mkp
+* ENUMERATOR variables
+gen enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1_cbsg == enum_name1_mkp & enum_name1_cbsg != enum_name2_cbsg
+gen enum_name2 = enum_name2_cbsg if enum_name2_cbsg != "" & enum_name2_cbsg == enum_name2_mkp & enum_name1_cbsg != enum_name2_cbsg
+replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1 == "" & Q1p == 1
+replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg == enum_name2_mkp & enum_name2_cbsg == enum_name1_mkp & enum_name1 == ""
+replace enum_name1 = enum_name1_cbsg if enum_name1_mkp == "" & enum_name2_mkp == "" & enum_name1 == ""
+replace enum_name1 = enum_name1_mkp if enum_name1_cbsg == "" & enum_name2_cbsg == "" & enum_name1 == ""
+* MERGE with supervisors
+merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
+drop if _merge==2
+drop _merge
+rename enum_supervisor supervisor_id
+* SAVE
+compress
 save "clean_merge_data__`date'.dta", replace
-
 
 	* use cleaned and merged dataset
 cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 use "clean_merge_data__`date'.dta", clear
 
-	* merge with sampling frame to check how often the household selected was part of intended sample
-drop _merge
+	*use "clean_merge_data__14Sep2018.dta", clear
+* MERGE with sampling frame to check how often the household selected was part of intended sample
 merge 1:1 hhid using "sampling frame.dta"
 drop if _merge == 2
 	
@@ -103,7 +138,7 @@ drop if _merge == 2
 		99 (Refuse) => .r
 		Possible to get ODK to insert .s to differentiate skipped values and missing values?
 	*=============================================================*/
-	ds, has(type numeric)
+	qui ds, has(type numeric)
 		foreach v of varlist `r(varlist)' {
 			*local l`v': var lab `v'
 			replace `v' = .o if `v' == 96
@@ -161,22 +196,23 @@ drop if _merge == 2
 	gen survey_status_`date' = .
 	
 	* Household not located
-	replace survey_status_`date' = 1 if Q1f1 == 0
+	replace survey_status_`date' = 1 if Q1f1 == 0 
+	*replace survey_status_`date' = 1 if missing(Q1f1)
 	
 	* Survey unsuccessful, respondent unavailable
-	replace survey_status_`date' = 2 if Q1l_consent == 0 & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
+	replace survey_status_`date' = 2 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
 
 	* Survey not consented
-	replace survey_status_`date' = 3 if Q1l_consent == 0 & Q1l_whynot == 4 // 4) General refusal
+	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & Q1l_whynot == 4 // 4) General refusal
 	
 	* CBSG survey incomplete, MKP survey not started
-	replace survey_status_`date' = 4 if Q1l_consent == 1 & missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
+	replace survey_status_`date' = 4 if Q1l_consent == 1 & missing(Q10cbsg89) & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
 	
 	* CBSG survey complete, MKP survey not started
-	replace survey_status_`date' = 5 if Q1l_consent == 1 & !missing(Q10cbsg89) & Q1r1 == 0 & Q1r3 == 0
+	replace survey_status_`date' = 5 if Q1l_consent == 1 & !missing(Q10cbsg89) & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
 	
 	* MKP survey complete, CBSG survey not uploaded
-	replace survey_status_`date' = 6 if missing(Q1f1) & missing(Q10cbsg89) & !missing(Q10m6_mkp)
+	replace survey_status_`date' = 6 if match_bw_cbsg_mkp == 2 & !missing(Q10m6_mkp)
 	
 	* Both surveys incomplete
 	replace survey_status_`date' = 7 if Q1l_consent == 1 & missing(Q10cbsg89) & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
@@ -187,22 +223,27 @@ drop if _merge == 2
 	* Both surveys complete
 	replace survey_status_`date' = 9 if Q1l_consent == 1 & !missing(Q10cbsg89) & ((Q1p==1 & !missing(Q10m6_cbsg)) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
 	
-
 	lab val survey_status_`date' survey_status
 	tab survey_status_`date', miss
+	
 	*note that completeness of survey will not depend on all errors discovered, but on key variables
 	
 	*=============================================================
 	*4. Data checks, Save 
 	*=============================================================
-	
+	compress
 	* (red) error 0: if start or end date-time are missing
-	gen err_red_missing_datetime = (missing(start_cbsg) | missing(start_mkp) | missing(end_cbsg) | missing(end_mkp)) if _merge == 3
-	replace err_red_missing_datetime = (missing(start_cbsg) | missing(end_cbsg)) if _merge == 1
-	replace err_red_missing_datetime = (missing(start_mkp) | missing(end_mkp)) if _merge == 2
-	lab var err_red_missing_datetime "Missing start and/or end date-time information for interviews"
+*>>>>>>>> missing start and end date-time
+*>>>>>>>use Start_time and end_time in cbsg
+*>>>>>>>use start_time and end_time in mkp
 	
-	* (red) error 1: flag extremely fast and extremely slow surveys
+	gen err_red_missing_datetime = (missing(start_cbsg) | missing(start_mkp) | missing(end_cbsg) | missing(end_mkp)) if match_bw_cbsg_mkp == 3
+	replace err_red_missing_datetime = (missing(start_cbsg) | missing(end_cbsg)) if match_bw_cbsg_mkp == 1
+	replace err_red_missing_datetime = (missing(start_mkp) | missing(end_mkp)) if match_bw_cbsg_mkp == 2
+	note err_red_missing_datetime: Missing start and/or end date-time information for interviews
+	lab var err_red_missing_datetime "Missing start and/or end date-time information for interviews"
+****>> yellow
+	* (yellow) error 1: flag extremely fast and extremely slow surveys
 	* extremely fast: <=30min for cbsg and <=20min for mkp
 	* extremely slow: >=4hrs for cbsg and >=3hrs for mkp
 	gen start_date_cbsg = clock(substr(start_cbsg, 1, 20), "YMD#hms#"), a(start_cbsg)
@@ -212,69 +253,94 @@ drop if _merge == 2
 	format start_date_cbsg start_date_mkp end_date_cbsg end_date_mkp %tc
 	gen interview_length_cbsg = (end_date_cbsg - start_date_cbsg)/60000, a(end_date_cbsg) // interview length in minutes
 	gen interview_length_mkp = (end_date_mkp - start_date_mkp)/60000, a(end_date_mkp)
-	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30)
-	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20)
-	gen err_red_slow_intw_cbsg = (interview_length_cbsg >= 240)
-	gen err_red_slow_intw_mkp = (interview_length_mkp >= 180)
+	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30) if survey_status_`date' == 9
+	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20) if survey_status_`date' == 9
+	gen err_yellow_slow_intw_cbsg = (interview_length_cbsg >= 240)
+	gen err_yellow_slow_intw_mkp = (interview_length_mkp >= 180)
+	note err_red_qui_intw_cbsg: Length of CBSG interview is 30min or less (too short)
+	note err_red_qui_intw_mkp: Length of MKP interview is 20min or less (too short)
+	note err_yellow_slow_intw_cbsg: Length of CBSG interview is 4hrs or more (too long)
+	note err_yellow_slow_intw_mkp: Length of MKP interview is 3hrs or more (too long)
 	lab var err_red_qui_intw_cbsg "Length of CBSG interview is 30min or less (too short)"
 	lab var err_red_qui_intw_mkp "Length of MKP interview is 20min or less (too short)"
-	lab var err_red_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
-	lab var err_red_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
+	lab var err_yellow_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
+	lab var err_yellow_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
 	
-	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 2
-	gen err_red_numhhmem = ((Q1n+2)<Q2a | (Q1n-2)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
-	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 2"
+	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 1
+	gen Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & !missing(Q2a_cbsg)
+	replace Q2a = Q2a_cbsg if missing(Q2a_mkp) & !missing(Q2a_cbsg)
+	replace Q2a = Q2a_mkp if missing(Q2a_cbsg) & !missing(Q2a_mkp)
+	gen err_red_numhhmem = ((Q1n+1)<Q2a | (Q1n-1)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
+	note err_red_numhhmem: Number of household members differs between MKP and CBSG surveys by more than 1
+	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
 	
+	* (red) error 2: check if number of household (Q1n) = names provided in the roster (Q2b)
+	egen length_names_hh_members = rownonmiss(Q2b*), s
+	gen err_red_hh_members = (length_names_hh_members != Q1n) if !missing(length_names_hh_members) & !missing(Q1n)
+	note err_red_hh_members: Number of hh members and number of name entries are unequal
+	lab var err_red_hh_members "Number of hh members and number of name entries are unequal"
+
 	* (red) error 3: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
 	gen err_red_income_cbsg = (Q2_estimate_cbsg>0 & Q2_estimate_cbsg<1000)
 	gen err_red_income_mkp = (Q2_estimate_mkp>0 & Q2_estimate_mkp<1000)
-	lab var err_red_income_cbsg "Verify total hh income from past 30 days in CBSG interview (Q2_estimate): reported value was >0 & <1000"
-	lab var err_red_income_mkp "Verify total hh income from past 30 days in MKP interview (Q2_estimate): reported value was >0 & <1000"
-
-	* (yellow) error 3: multiple years of schooling but cannot read or write
-	*gen err_educated_cantread_cbsg = (inrange(Q2n1_cbsg, 2, 6) & Q2l == 4 & Q2n2 > 9)
-	*lab var err_educated_cantread_cbsg "CBSG member with multiple years of schooling but cannot read or write"
+	note err_red_income_cbsg: Reported value was >0 & <1000: Verify total hh income from past 30 days in CBSG interview (Q2_estimate)
+	note err_red_income_mkp: Reported value was >0 & <1000: Verify total hh income from past 30 days in MKP interview (Q2_estimate)
+	lab var err_red_income_cbsg "Reported value was >0 & <1000: Verify total hh income from past 30 days in CBSG interview (Q2_estimate)"
+	lab var err_red_income_mkp "Reported value was >0 & <1000: Verify total hh income from past 30 days in MKP interview (Q2_estimate)"
 	
 	* (yellow) error 4: inconsistent and extreme expenditures on health services and medicine
 	gen err_yellow_spd_hlth_incon = ((Q4b1_cbsg + 2000) <= Q4b1_mkp | (Q4b1_cbsg - 2000) >= Q4b1_mkp) if !missing(Q4b1_cbsg) & !missing(Q4b1_mkp)
 	gen err_yellow_extspd_hlth = (Q4b1_cbsg >= 500000 | Q4b1_mkp >= 500000) if !missing(Q4b1_cbsg) & !missing(Q4b1_mkp)
+	note err_yellow_spd_hlth_incon: Inconsistent (>2000) report on healthcare expenditure b/w CBSG and MKP members
+	note err_yellow_extspd_hlth: Spent 500k afghani or more on healthcare, that is considered very high
 	lab var err_yellow_spd_hlth_incon "Inconsistent (>2000) report on healthcare expenditure b/w CBSG and MKP members"
 	lab var err_yellow_extspd_hlth "Spent 500k afghani or more on healthcare, that is considered very high"
 	
 	* (yellow) error 5: extreme expenditures on tuition for education
 	gen err_yellow_spd_educ_incons = ((Q4b2_cbsg + 2000) <= Q4b2_mkp | (Q4b2_cbsg - 2000) >= Q4b2_mkp) if !missing(Q4b2_cbsg) & !missing(Q4b2_mkp)
 	gen err_yellow_extspd_educ = (Q4b2_cbsg >= 15000 | Q4b2_mkp >= 15000) if !missing(Q4b2_cbsg) & !missing(Q4b2_mkp)
+	note err_yellow_spd_educ_incons: Inconsistent (>2000) report on education expenditure b/w CBSG and MKP members
+	note err_yellow_extspd_educ: Spent 15k afghani or more on education, that is considered very high
 	lab var err_yellow_spd_educ_incons "Inconsistent (>2000) report on education expenditure b/w CBSG and MKP members"
 	lab var err_yellow_extspd_educ "Spent 15k afghani or more on education, that is considered very high"
 	
-	* (yellow) error 6: very old (>5years) tent
-	*gen err_old_tent = (Q5a == 5 & Q5b > 5 & Q5b < .)
-	*lab var err_old_tent "Dwelling type is tent and it has been constructed more than 5 years ago"
-	
-	* (yellow) error 6: inconsistent response about type of dwelling
-	gen err_yellow_dwlng_incons = (Q5a_cbsg != Q5a_mkp) if !missing(Q5a_cbsg) & !missing(Q5a_mkp)
-	lab var err_yellow_dwlng_incons "CBSG and MKP provide inconsistent response about type of dwelling"
+	* (red) error 6: inconsistent response about type of dwelling
+	gen err_red_dwlng_incons = (Q5a_cbsg != Q5a_mkp) if !missing(Q5a_cbsg) & !missing(Q5a_mkp) & Q1p!=1
+	note err_red_dwlng_incons: CBSG and MKP provide inconsistent response about type of dwelling
+	lab var err_red_dwlng_incons "CBSG and MKP provide inconsistent response about type of dwelling"
 	
 	* (red) error 7: cbsg respondent saying she/he is not a member of a cbsg
 	gen err_red_cbsg_notmmr = (Q7g1 == 0)
+	note err_red_cbsg_notmmr: CBSG member saying she/he is not a member of a CBSG
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
 	
-	* (yellow) error 8: more than 90% similarity in responses
-	*qui ds Q*, has(type numeric)
-	*percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
-	*gen err_yellow_close_match = (pmatch > .9)
-	*lab var err_yellow_close_match "More than 90% similarity in response to questions, which is considered very high"
+*>>>>> error only if match is from the same supervisor
+	* (red) error 8: more than 90% similarity in responses
+	qui ds Q*, has(type numeric)
+	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
+		preserve
+		keep hhid supervisor_id
+		rename (hhid supervisor_id) (m_id match_supervisor_id)
+		save "near_dup_matchedid.dta", replace
+		restore
+	merge m:1 m_id using "near_dup_matchedid.dta", gen(xxx) keep(master match)
+	gen err_red_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
+	note err_red_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
+	lab var err_red_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
 	
-	* (yellow) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
-	gen err_yellow_mkp_nt_missing = (Q1p == 1 & _merge == 3)
-	lab var err_yellow_mkp_nt_missing "CBSG report self (Q1p==1) and MKP questionnaire is filled"
+	* (red) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
+	gen err_red_mkp_nt_missing = (Q1p == 1 & match_bw_cbsg_mkp == 3) if Q5m9_mkp != .
+	note err_red_mkp_nt_missing: CBSG report self (Q1p==1) and MKP questionnaire is filled
+	lab var err_red_mkp_nt_missing "CBSG report self (Q1p==1) and MKP questionnaire is filled"
 	
-	* (yellow) error 10: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
-	gen err_yellow_mkp_missing = (Q1p != 1 & _merge != 3)
-	lab var err_yellow_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
+	* (red) error 10: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
+	gen err_red_mkp_missing = (Q1p != 1 & match_bw_cbsg_mkp != 3)
+	note err_red_mkp_missing: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
+	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
 	* (yellow) Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
 	gen err_yellow_save = (Q7k1>Q7n) if Q7k1<. & Q7k1!=99 & Q7k1!=98 & Q7n<. & Q7n!=99 & Q7n!=98
+	note err_yellow_save: Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
 	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
 	
 	* check skips
@@ -300,23 +366,19 @@ drop if _merge == 2
 	*replace err_income = ((cash_recieved_discrepancy > .2 & Q2v_cbsg > 2500) | (cash_recieved_discrepancy > 500 & Q2v_cbsg <= 2500))
 	*lab var err_income "CBSG and MKP participants report significantly inconsistent incomes"
 	
-	cap mkdir "baseline"
-	cap mkdir "baseline/post checks data/"
+	compress
 	save "baseline/post checks data/sweep_hh_level_data__`date'.dta", replace
-	*save "$clean/sweep_hh_level_data.dta", replace
 	
 	*=============================================================
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
 	use "baseline/post checks data/sweep_hh_level_data__`date'.dta", clear
 	cd "~/Dropbox/SWEEP shared/Baseline QC Reports/"
-	*cd "~/Downloads/sweep/data/"
 	cap mkdir "Reports"
 	cap mkdir "Reports/Overview"
 	cap log close
 	
 	*gen gender = 
-	
 	
 	
 	log using "Reports/Overview/Overview__`date'.smcl", replace
@@ -346,13 +408,15 @@ drop if _merge == 2
 	foreach err of varlist err_red_* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
 		local `v'_round = 100*round(`r(mean)', .01)
-		local `v'_lab: var lab `err'
+		local `v'_lab = "``err'[note1]'"
+		*local `v'_lab: var lab `err'
 		di "(RED) ``v'_round'% errors: ``v'_lab'"
 	}
 	foreach err of varlist err_yellow_* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
 		local `v'_round = 100*round(`r(mean)', .01)
-		local `v'_lab: var lab `err'
+		local `v'_lab = "``err'[note1]'"
+		*local `v'_lab: var lab `err'
 		di "(YELLOW) ``v'_round'% errors: ``v'_lab'"
 	}
 	
@@ -360,7 +424,7 @@ drop if _merge == 2
 	tab Q1p if survey_status_`date' == 9, miss
 	
 	*Number of Household Members
-	tab Q2a if survey_status_`date' == 9, miss
+	sum Q1n if survey_status_`date' == 9, detai
 	
 	*During the last 12 MONTHS did you always have enough food for your household?
 	tab Q4c if survey_status_`date' == 9, miss
@@ -395,20 +459,6 @@ drop if _merge == 2
 	cap mkdir "Reports/By Supervisor"
 	cap mkdir "Reports/By Supervisor/`date'"
 	
-	gen enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1_cbsg == enum_name1_mkp & enum_name1_cbsg != enum_name2_cbsg
-	gen enum_name2 = enum_name2_cbsg if enum_name2_cbsg != "" & enum_name2_cbsg == enum_name2_mkp & enum_name1_cbsg != enum_name2_cbsg
-	replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1 == "" & Q1p == 1
-	replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg == enum_name2_mkp & enum_name2_cbsg == enum_name1_mkp & enum_name1 == ""
-	replace enum_name1 = enum_name1_cbsg if enum_name1_mkp == "" & enum_name2_mkp == "" & enum_name1 == ""
-	replace enum_name1 = enum_name1_mkp if enum_name1_cbsg == "" & enum_name2_cbsg == "" & enum_name1 == ""
-	drop enum_*_cbsg enum_*_mkp enum_name2
-	
-	cap drop _merge
-	merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
-	drop if _merge==2
-	drop _merge
-	rename enum_supervisor supervisor_id
-
 levelsof supervisor_id, local(uniq_supervisor)
 
 foreach i of local uniq_supervisor {
@@ -422,6 +472,7 @@ foreach i of local uniq_supervisor {
 	di "**************** STATUS OF SURVEYS BY SUPERVISOR ****************"
 	di "*****************************************************************"
 	
+	tab survey_status_`date', miss
 	tab hhid survey_status_`date', miss
 	
 	di ""
@@ -430,7 +481,8 @@ foreach i of local uniq_supervisor {
 	di "*****************************************************************"
 	
 	foreach err of varlist err_red_* {
-		local `v'_lab: var lab `err'
+		local `v'_lab = "``err'[note1]'"
+		*local `v'_lab: var lab `err'
 		di "(RED): ``v'_lab': List of all hhid"
 		list hhid if `err'==1 & survey_status_`date' == 9
 	}
@@ -441,7 +493,8 @@ foreach i of local uniq_supervisor {
 	di "*****************************************************************"
 	
 	foreach err of varlist err_yellow_* {
-		local `v'_lab: var lab `err'
+		local `v'_lab = "``err'[note1]'"
+		*local `v'_lab: var lab `err'
 		di "(YELLOW): ``v'_lab': List of all hhid"
 		list hhid if `err'==1 & survey_status_`date' == 9
 	}
@@ -451,27 +504,20 @@ foreach i of local uniq_supervisor {
 	di "*******************ENUMERATOR TRENDS*****************************"
 	di "*****************************************************************"
 	
-	#d ;
-	di "(RED) 1. err_red_missing_datetime: `: var lab err_red_missing_datetime'";
-	di "(RED) 2. err_red_qui_intw_cbsg: `: var lab err_red_qui_intw_cbsg'";
-	di "(RED) 3. err_red_qui_intw_mkp: `: var lab err_red_qui_intw_mkp'";
-	di "(RED) 4. err_red_slow_intw_cbsg: `: var lab err_red_slow_intw_cbsg'";
-	di "(RED) 5. err_red_slow_intw_mkp: `: var lab err_red_slow_intw_mkp'";
-	di "(RED) 6. err_red_numhhmem: `: var lab err_red_numhhmem'";
-	di "(RED) 7. err_red_income_cbsg: `: var lab err_red_income_cbsg'";
-	di "(RED) 8. err_red_income_mkp: `: var lab err_red_income_mkp'";
-	di "(RED) 9. err_red_cbsg_notmmr: `: var lab err_red_cbsg_notmmr'";
-	tabstat err_red_missing_datetime
-			err_red_qui_intw_cbsg
-			err_red_qui_intw_mkp
-			err_red_slow_intw_cbsg
-			err_red_slow_intw_mkp
-			err_red_numhhmem
-			err_red_income_cbsg
-			err_red_income_mkp
-			err_red_cbsg_notmmr, long nototal column(statistics) by(enum_name1) labelwidth(32);
+	egen error_red = rowtotal(err_red_*)
+	
+	tab error_red, miss
+	
+	gen error_red_dummy = (error_red > 0)
+	lab def err 1 "Has error" 0 "Doesn't have error"
+	lab val error_red_dummy err
 
-	#d cr
+	tab enum_name1 error_red_dummy, miss row
+	
+	
+*>>> n out of N enum fail any error >>>> anymatch if any fail
+*>>> n out of N error fail
+*>>> loop through each enum, produce perc of any RED fail, produce perc of each RED fail
 	
 	****************LIST OF Households requiring callbacks***************************
 	
