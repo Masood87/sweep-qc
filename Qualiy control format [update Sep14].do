@@ -172,10 +172,12 @@ drop if _merge == 2
 	3 "Survey not consented" 
 	4 "CBSG survey incomplete, MKP survey not started" 
 	5 "CBSG survey complete, MKP survey not started" 
-	6 "MKP survey complete, CBSG survey not uploaded"
-	7 "Both surveys incomplete" 
-	8 "CBSG survey complete, MKP survey incomplete" 
-	9 "Both survey's complete", modify;
+	6 "MKP survey incomplete, CBSG survey not uploaded"
+	7 "MKP survey complete, CBSG survey not uploaded"
+	8 "Both surveys incomplete" 
+	9 "CBSG survey incomplete, MKP survey not uploaded"
+	10 "CBSG survey complete, MKP survey incomplete" 
+	11 "Both survey's complete", modify;
 	#d cr
 
 
@@ -197,7 +199,6 @@ drop if _merge == 2
 	
 	* Household not located
 	replace survey_status_`date' = 1 if Q1f1 == 0 
-	*replace survey_status_`date' = 1 if missing(Q1f1)
 	
 	* Survey unsuccessful, respondent unavailable
 	replace survey_status_`date' = 2 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
@@ -211,17 +212,25 @@ drop if _merge == 2
 	* CBSG survey complete, MKP survey not started
 	replace survey_status_`date' = 5 if Q1l_consent == 1 & Q10cbsg89 != . & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
 	
+	* MKP survey incomplete, CBSG survey not uploaded
+	replace survey_status_`date' = 6 if match_bw_cbsg_mkp == 2 & missing(Q10m6_mkp)
+
 	* MKP survey complete, CBSG survey not uploaded
-	replace survey_status_`date' = 6 if match_bw_cbsg_mkp == 2 & !missing(Q10m6_mkp)
+	replace survey_status_`date' = 7 if match_bw_cbsg_mkp == 2 & !missing(Q10m6_mkp)
 	
 	* Both surveys incomplete
-	replace survey_status_`date' = 7 if Q1l_consent == 1 & Q10cbsg89 == . & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
+	replace survey_status_`date' = 8 if Q1l_consent == 1 & Q10cbsg89 == . & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
+	replace survey_status_`date' = 8 if match_bw_cbsg_mkp==3 & Q1p==. & Q2a_cbsg==. & cbsg=="" & Q10cbsg89==. & Q1r3==. & Q1r1==.
+	
+	* CBSG survey incomplete, MKP survey not uploaded
+	replace survey_status_`date' = 9 if Q1l_consent == 1 & Q10cbsg89 == . & match_bw_cbsg_mkp == 1
 	
 	* CBSG survey complete, MKP survey incomplete
-	replace survey_status_`date' = 8 if Q1l_consent == 1 & Q10cbsg89 != . & (Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)
+	replace survey_status_`date' = 10 if Q1l_consent == 1 & Q10cbsg89 != . & (Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)
 	
 	* Both surveys complete
-	replace survey_status_`date' = 9 if Q1l_consent == 1 & Q10cbsg89 != . & ((Q1p==1 & Q10m6_cbsg != .) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
+	replace survey_status_`date' = 11 if Q1l_consent == 1 & Q10cbsg89 != . & ((Q1p==1 & Q10m6_cbsg != .) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
+	replace survey_status_`date' = 11 if Q1l_consent == 1 & Q10cbsg89 == . & Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & Q2a_mkp!=. & Q5m7_mkp!=. & Q10m6_mkp!=.
 	
 	lab val survey_status_`date' survey_status
 	tab survey_status_`date', miss
@@ -253,8 +262,8 @@ drop if _merge == 2
 	format start_date_cbsg start_date_mkp end_date_cbsg end_date_mkp %tc
 	gen interview_length_cbsg = (end_date_cbsg - start_date_cbsg)/60000, a(end_date_cbsg) // interview length in minutes
 	gen interview_length_mkp = (end_date_mkp - start_date_mkp)/60000, a(end_date_mkp)
-	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30) if survey_status_`date' == 9
-	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20) if survey_status_`date' == 9
+	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30) if survey_status_`date' == 11
+	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20) if survey_status_`date' == 11
 	gen err_yellow_slow_intw_cbsg = (interview_length_cbsg >= 240)
 	gen err_yellow_slow_intw_mkp = (interview_length_mkp >= 180)
 	note err_red_qui_intw_cbsg: Length of CBSG interview is 30min or less (too short)
@@ -420,14 +429,14 @@ drop if _merge == 2
 	
 	*List all errors
 	foreach err of varlist err_red_* {
-		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
+		qui sum `err' if !missing(`err') & survey_status_`date' == 11, detail
 		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
 		di "(RED) ``v'_round'% errors: ``v'_lab'"
 	}
 	foreach err of varlist err_yellow_* {
-		qui sum `err' if !missing(`err') & survey_status_`date' == 9, detail
+		qui sum `err' if !missing(`err') & survey_status_`date' == 11, detail
 		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
@@ -435,34 +444,34 @@ drop if _merge == 2
 	}
 	
 	*Relationship between mkp and cbsg member
-	tab Q1p if survey_status_`date' == 9, miss
+	tab Q1p if survey_status_`date' == 11, miss
 	
 	*Number of Household Members
-	sum Q2a if survey_status_`date' == 9, detai
+	sum Q2a if survey_status_`date' == 11, detai
 	
 	*During the last 12 MONTHS did you always have enough food for your household?
-	tab Q4c if survey_status_`date' == 9, miss
+	tab Q4c if survey_status_`date' == 11, miss
 	
 	*In the last 7 days, did you work for a wage, salary, commission or any payment in kind; including doing paid domestic work or paid farm work even if for one hour?
-	tab Q6a if survey_status_`date' == 9, miss
+	tab Q6a if survey_status_`date' == 11, miss
 	
 	*In the last 7 days, did you run a business of any size for yourself or the household or with partners, even if for one hour?
-	tab Q6b if survey_status_`date' == 9, miss
+	tab Q6b if survey_status_`date' == 11, miss
 	
 	*In the last 7 days, did you help in any kind of business run by this household, even if for one hour?
-	tab Q6c if survey_status_`date' == 9, miss
+	tab Q6c if survey_status_`date' == 11, miss
 	
 	*In the last 7 days, did you work as a paid or unpaid apprentice even if just for one hour?
-	tab Q6d if survey_status_`date' == 9, miss
+	tab Q6d if survey_status_`date' == 11, miss
 	
 	*In the last 7 days, did you work on your household's farm or work with livestock or poultry, even if for one hour?
-	tab Q6e if survey_status_`date' == 9, miss
+	tab Q6e if survey_status_`date' == 11, miss
 	
 	*Although you did not work last week, do have work (any of activities above) from which you were temporarily absent?
-	tab Q6f if survey_status_`date' == 9, miss
+	tab Q6f if survey_status_`date' == 11, miss
 	
 	*Were you involved in any of the following economic activities to contribute to earning money for yourself OR YOUR FAMILY in the past 12 months?
-	mrtab Q6g1_* if survey_status_`date' == 9, poly sort des includemissing
+	mrtab Q6g1_* if survey_status_`date' == 11, poly sort des includemissing
 	
 	log close
 	translate "Reports/Overview/Overview__`date'.smcl" "Reports/Overview/Overview__`date'.pdf", replace
@@ -486,7 +495,7 @@ foreach i of local uniq_supervisor {
 	di "**************** STATUS OF SURVEYS BY SUPERVISOR ****************"
 	di "*****************************************************************"
 	
-	tab survey_status_`date', miss
+	fre survey_status_`date'
 	tab hhid survey_status_`date', miss
 	
 	di ""
@@ -498,11 +507,11 @@ foreach i of local uniq_supervisor {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
 		di "(RED): ``v'_lab': List of all hhid"
-		list hhid if `err'==1 & survey_status_`date' == 9
+		list hhid if `err'==1 & survey_status_`date' == 11
 	}
 	
 	di "(RED): `err_red2_close_match[note1]': List of all hhid"
-	list hhid matched_hhid pmatch if err_red2_close_match & survey_status_`date' == 9
+	list hhid matched_hhid pmatch if err_red2_close_match & survey_status_`date' == 11
 	
 	di ""
 	di "*****************************************************************"
@@ -513,7 +522,7 @@ foreach i of local uniq_supervisor {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
 		di "(YELLOW): ``v'_lab': List of all hhid"
-		list hhid if `err'==1 & survey_status_`date' == 9
+		list hhid if `err'==1 & survey_status_`date' == 11
 	}
 	
 	di ""
@@ -524,6 +533,19 @@ foreach i of local uniq_supervisor {
 	tab error_red, miss
 	tab enum_name1 error_red_dummy, miss row
 	
+	
+qui levelsof enum_name1, local(uniq_enum)
+foreach enum of local uniq_enum {
+	
+	di "ENUMERATOR: `enum'"
+	foreach err of varlist err_red_* {
+		qui sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'", detail
+		local `v'_round = 100*round(`r(mean)', .01)
+		local `v'_lab = "``err'[note1]'"
+		*local `v'_lab: var lab `err'
+		di "(RED) ``v'_round'% errors: ``v'_lab'"
+	}
+}
 
 	di "*****************************************************************"
 	di "Verify that physical parental consent form has been signed and saved"
