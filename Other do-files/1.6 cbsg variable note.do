@@ -52,7 +52,7 @@ cap note Q1m5: Q1i3 Alternative mobile number
 cap note Q1m_note: You must list at least one phone number for household
 cap note Q1n: How many persons currently live in your household?
 cap note Q1o: Who is the most knowledgable person (MKP) in your household?
-cap note Q1p: What is the relationship of ${Q1o} to you?
+cap note Q1p: What is the relationship of he most knowledgable person (MKP) to you?
 cap note Q1p_other: Other (please Specify)?
 cap note Q1r1: Q1r1 Could my colleague, ${enum_name2}, speak to ${Q1o}, while I interview you?
 cap note Q1r2: Q1r2 Why not?
