@@ -206,22 +206,22 @@ drop if _merge == 2
 	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & Q1l_whynot == 4 // 4) General refusal
 	
 	* CBSG survey incomplete, MKP survey not started
-	replace survey_status_`date' = 4 if Q1l_consent == 1 & missing(Q10cbsg89) & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
+	replace survey_status_`date' = 4 if Q1l_consent == 1 & Q10cbsg89 == . & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
 	
 	* CBSG survey complete, MKP survey not started
-	replace survey_status_`date' = 5 if Q1l_consent == 1 & !missing(Q10cbsg89) & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
+	replace survey_status_`date' = 5 if Q1l_consent == 1 & Q10cbsg89 != . & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
 	
 	* MKP survey complete, CBSG survey not uploaded
 	replace survey_status_`date' = 6 if match_bw_cbsg_mkp == 2 & !missing(Q10m6_mkp)
 	
 	* Both surveys incomplete
-	replace survey_status_`date' = 7 if Q1l_consent == 1 & missing(Q10cbsg89) & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
+	replace survey_status_`date' = 7 if Q1l_consent == 1 & Q10cbsg89 == . & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
 	
 	* CBSG survey complete, MKP survey incomplete
-	replace survey_status_`date' = 8 if Q1l_consent == 1 & !missing(Q10cbsg89) & (Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)
+	replace survey_status_`date' = 8 if Q1l_consent == 1 & Q10cbsg89 != . & (Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)
 	
 	* Both surveys complete
-	replace survey_status_`date' = 9 if Q1l_consent == 1 & !missing(Q10cbsg89) & ((Q1p==1 & !missing(Q10m6_cbsg)) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
+	replace survey_status_`date' = 9 if Q1l_consent == 1 & Q10cbsg89 != . & ((Q1p==1 & Q10m6_cbsg != .) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
 	
 	lab val survey_status_`date' survey_status
 	tab survey_status_`date', miss
@@ -267,15 +267,17 @@ drop if _merge == 2
 	lab var err_yellow_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
 	
 	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 1
-	gen Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & !missing(Q2a_cbsg)
+	gen Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & !missing(Q2a_cbsg) & Q1p != 1
 	replace Q2a = Q2a_cbsg if missing(Q2a_mkp) & !missing(Q2a_cbsg)
 	replace Q2a = Q2a_mkp if missing(Q2a_cbsg) & !missing(Q2a_mkp)
+	replace Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & Q1p==1
 	gen err_red_numhhmem = ((Q1n+1)<Q2a | (Q1n-1)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
 	note err_red_numhhmem: Number of household members differs between MKP and CBSG surveys by more than 1
 	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
 	
 	* (red) error 2: check if number of household (Q2a) = names provided in the roster (Q2b)
 	egen length_names_hh_members = rownonmiss(Q2b*), s
+	replace length_names_hh_members = length_names_hh_members/2 if Q2a_cbsg == Q2a_mkp & Q1p == 1
 	gen err_red_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
 	note err_red_hh_members: Number of hh members and number of name entries are unequal
 	lab var err_red_hh_members "Number of hh members and number of name entries are unequal"
