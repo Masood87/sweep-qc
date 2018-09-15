@@ -319,16 +319,16 @@ drop if _merge == 2
 *>>>>> error only if match is from the same supervisor
 	* (red) error 8: more than 90% similarity in responses
 	qui ds Q*, has(type numeric)
-	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(m_id)
+	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(matched_hhid)
 		preserve
 		keep hhid supervisor_id
-		rename (hhid supervisor_id) (m_id match_supervisor_id)
+		rename (hhid supervisor_id) (matched_hhid match_supervisor_id)
 		save "near_dup_matchedid.dta", replace
 		restore
-	merge m:1 m_id using "near_dup_matchedid.dta", gen(xxx) keep(master match)
-	gen err_red_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
-	note err_red_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
-	lab var err_red_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
+	merge m:1 matched_hhid using "near_dup_matchedid.dta", gen(xxx) keep(master match)
+	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
+	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
+	lab var err_red2_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
 	
 	* (red) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
 	gen err_red_mkp_nt_missing = (Q1p == 1 & match_bw_cbsg_mkp == 3) if Q5m9_mkp != .
@@ -351,6 +351,11 @@ drop if _merge == 2
 	gen error_red_dummy = (error_red > 0)
 	lab def err 1 "Has error" 0 "Doesn't have error"
 	lab val error_red_dummy err
+	
+	* parental consent form
+	gen parent_consent_req = (below_18 == 1 & parentalhome == 1)
+	note parent_consent_req: Verify that physical parental consent form has been signed and saved
+	lab var parent_consent_req "Verify that physical parental consent form has been signed and saved"
 
 	* check skips
 	*gen skip_q8c = (!missing(Q8c2) & !Q8c1) // loop
@@ -496,6 +501,9 @@ foreach i of local uniq_supervisor {
 		list hhid if `err'==1 & survey_status_`date' == 9
 	}
 	
+	di "(RED): `err_red2_close_match[note1]': List of all hhid"
+	list hhid matched_hhid pmatch if err_red2_close_match & survey_status_`date' == 9
+	
 	di ""
 	di "*****************************************************************"
 	di "************* YELLOW ERRORS : CALL BACK NOT REQUIRED ************"
@@ -515,6 +523,13 @@ foreach i of local uniq_supervisor {
 		
 	tab error_red, miss
 	tab enum_name1 error_red_dummy, miss row
+	
+
+	di "*****************************************************************"
+	di "Verify that physical parental consent form has been signed and saved"
+	di "*****************************************************************"
+
+	list hhid if parent_consent_req
 	
 *>>> n out of N enum fail any error >>>> anymatch if any fail
 *>>> n out of N error fail
