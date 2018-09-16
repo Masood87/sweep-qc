@@ -204,7 +204,7 @@ drop if _merge == 2
 	replace survey_status_`date' = 2 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
 
 	* Survey not consented
-	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & Q1l_whynot == 4 // 4) General refusal
+	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 4, .o) // 4) General refusal
 	
 	* CBSG survey incomplete, MKP survey not started
 	replace survey_status_`date' = 4 if Q1l_consent == 1 & Q10cbsg89 == . & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
@@ -285,6 +285,9 @@ drop if _merge == 2
 	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
 	
 	* (red) error 2: check if number of household (Q2a) = names provided in the roster (Q2b)
+	foreach i of varlist Q2b* {
+		replace `i' = "" if inlist(`i', "0", "00", "No", "no")
+	}
 	egen length_names_hh_members = rownonmiss(Q2b*), s
 	replace length_names_hh_members = length_names_hh_members/2 if Q2a_cbsg == Q2a_mkp & Q1p == 1
 	gen err_red_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
