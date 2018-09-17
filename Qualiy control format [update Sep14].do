@@ -290,9 +290,9 @@ drop if _merge == 2
 	}
 	egen length_names_hh_members = rownonmiss(Q2b*), s
 	replace length_names_hh_members = length_names_hh_members/2 if Q2a_cbsg == Q2a_mkp & Q1p == 1
-	gen err_red_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
-	note err_red_hh_members: Number of hh members and number of name entries are unequal
-	lab var err_red_hh_members "Number of hh members and number of name entries are unequal"
+	gen err_red2_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
+	note err_red2_hh_members: Number of hh members and number of name entries are unequal
+	lab var err_red2_hh_members "Number of hh members and number of name entries are unequal"
 
 	* (red) error 3: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
 	gen err_red_income_cbsg = (Q2_estimate_cbsg>0 & Q2_estimate_cbsg<1000)
@@ -431,7 +431,7 @@ drop if _merge == 2
 	tab Q1l_consent, miss
 	
 	*List all errors
-	foreach err of varlist err_red_* {
+	foreach err of varlist err_red* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 11, detail
 		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab = "``err'[note1]'"
@@ -515,6 +515,9 @@ foreach i of local uniq_supervisor {
 	
 	di "(RED): `err_red2_close_match[note1]': List of all hhid"
 	list hhid matched_hhid pmatch if err_red2_close_match & survey_status_`date' == 11
+	
+	di "(RED): `err_red2_hh_members[note1]': List of all hhid"
+	list hhid Q2a length_names_hh_members if err_red2_hh_members & survey_status_`date' == 11
 	
 	di ""
 	di "*****************************************************************"
