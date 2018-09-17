@@ -517,7 +517,7 @@ foreach i of local uniq_supervisor {
 	list hhid matched_hhid pmatch if err_red2_close_match & survey_status_`date' == 11
 	
 	di "(RED): `err_red2_hh_members[note1]': List of all hhid"
-	list hhid Q2a length_names_hh_members if err_red2_hh_members & survey_status_`date' == 11
+	list hhid length_names_hh_members Q2a if err_red2_hh_members & survey_status_`date' == 11
 	
 	di ""
 	di "*****************************************************************"
@@ -546,10 +546,13 @@ foreach enum of local uniq_enum {
 	di "ENUMERATOR: `enum'"
 	foreach err of varlist err_red_* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'", detail
-		local `v'_round = 100*round(`r(mean)', .01)
-		local `v'_lab = "``err'[note1]'"
-		*local `v'_lab: var lab `err'
-		di "(RED) ``v'_round'% errors: ``v'_lab'"
+		
+		if (`r(mean)' != 0) {
+			local `v'_round = 100*round(`r(mean)', .01)
+			local `v'_lab = "``err'[note1]'"
+			*local `v'_lab: var lab `err'
+			di "(RED) ``v'_round'% errors: ``v'_lab'"
+		}
 	}
 }
 
