@@ -250,6 +250,7 @@ drop if _merge == 2
 	replace err_red_missing_datetime = (missing(start_cbsg) | missing(end_cbsg)) if match_bw_cbsg_mkp == 1
 	replace err_red_missing_datetime = (missing(start_mkp) | missing(end_mkp)) if match_bw_cbsg_mkp == 2
 	note err_red_missing_datetime: Missing start and/or end date-time information for interviews
+	note err_red_missing_datetime: Questions used: start_cbsg end_cbsg start_mkp end_mkp
 	lab var err_red_missing_datetime "Missing start and/or end date-time information for interviews"
 ****>> yellow
 	* (yellow) error 1: flag extremely fast and extremely slow surveys
@@ -267,9 +268,13 @@ drop if _merge == 2
 	gen err_yellow_slow_intw_cbsg = (interview_length_cbsg >= 240)
 	gen err_yellow_slow_intw_mkp = (interview_length_mkp >= 180)
 	note err_red_qui_intw_cbsg: Length of CBSG interview is 30min or less (too short)
+	note err_red_qui_intw_cbsg: Questions used: start_cbsg end_cbsg
 	note err_red_qui_intw_mkp: Length of MKP interview is 20min or less (too short)
+	note err_red_qui_intw_mkp: Questions used: start_mkp end_mkp
 	note err_yellow_slow_intw_cbsg: Length of CBSG interview is 4hrs or more (too long)
+	note err_yellow_slow_intw_cbsg: Questions used: start_cbsg end_cbsg
 	note err_yellow_slow_intw_mkp: Length of MKP interview is 3hrs or more (too long)
+	note err_yellow_slow_intw_mkp: Questions used: start_mkp end_mkp
 	lab var err_red_qui_intw_cbsg "Length of CBSG interview is 30min or less (too short)"
 	lab var err_red_qui_intw_mkp "Length of MKP interview is 20min or less (too short)"
 	lab var err_yellow_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
@@ -282,6 +287,7 @@ drop if _merge == 2
 	replace Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & Q1p==1
 	gen err_red_numhhmem = ((Q1n+1)<Q2a | (Q1n-1)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
 	note err_red_numhhmem: Number of household members differs between MKP and CBSG surveys by more than 1
+	note err_red_numhhmem: Questions used: Q1n Q2a_cbsg Q2a_mkp
 	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
 	
 	* (red) error 2: check if number of household (Q2a) = names provided in the roster (Q2b)
@@ -292,13 +298,16 @@ drop if _merge == 2
 	replace length_names_hh_members = length_names_hh_members/2 if Q2a_cbsg == Q2a_mkp & Q1p == 1
 	gen err_red2_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
 	note err_red2_hh_members: Number of hh members and number of name entries are unequal
+	note err_red2_hh_members: Questions used: Q2b-questions Q2a_cbsg Q2a_mkp
 	lab var err_red2_hh_members "Number of hh members and number of name entries are unequal"
 
 	* (red) error 3: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
 	gen err_red_income_cbsg = (Q2_estimate_cbsg>0 & Q2_estimate_cbsg<1000)
 	gen err_red_income_mkp = (Q2_estimate_mkp>0 & Q2_estimate_mkp<1000)
 	note err_red_income_cbsg: Reported value was >0 & <1000: Verify total hh income from past 30 days in CBSG interview (Q2_estimate)
+	note err_red_income_cbsg: Questions used: Q2_estimate_cbsg
 	note err_red_income_mkp: Reported value was >0 & <1000: Verify total hh income from past 30 days in MKP interview (Q2_estimate)
+	note err_red_income_mkp: Questions used: Q2_estimate_mkp
 	lab var err_red_income_cbsg "Reported value was >0 & <1000: Verify total hh income from past 30 days in CBSG interview (Q2_estimate)"
 	lab var err_red_income_mkp "Reported value was >0 & <1000: Verify total hh income from past 30 days in MKP interview (Q2_estimate)"
 	
@@ -306,7 +315,9 @@ drop if _merge == 2
 	gen err_yellow_spd_hlth_incon = ((Q4b1_cbsg + 2000) <= Q4b1_mkp | (Q4b1_cbsg - 2000) >= Q4b1_mkp) if !missing(Q4b1_cbsg) & !missing(Q4b1_mkp)
 	gen err_yellow_extspd_hlth = (Q4b1_cbsg >= 500000 | Q4b1_mkp >= 500000) if !missing(Q4b1_cbsg) & !missing(Q4b1_mkp)
 	note err_yellow_spd_hlth_incon: Inconsistent (>2000) report on healthcare expenditure b/w CBSG and MKP members
+	note err_yellow_spd_hlth_incon: Questions used: Q4b1_cbsg Q4b1_mkp
 	note err_yellow_extspd_hlth: Spent 500k afghani or more on healthcare, that is considered very high
+	note err_yellow_extspd_hlth: Questions used: Q4b1_cbsg Q4b1_mkp
 	lab var err_yellow_spd_hlth_incon "Inconsistent (>2000) report on healthcare expenditure b/w CBSG and MKP members"
 	lab var err_yellow_extspd_hlth "Spent 500k afghani or more on healthcare, that is considered very high"
 	
@@ -314,18 +325,24 @@ drop if _merge == 2
 	gen err_yellow_spd_educ_incons = ((Q4b2_cbsg + 2000) <= Q4b2_mkp | (Q4b2_cbsg - 2000) >= Q4b2_mkp) if !missing(Q4b2_cbsg) & !missing(Q4b2_mkp)
 	gen err_yellow_extspd_educ = (Q4b2_cbsg >= 15000 | Q4b2_mkp >= 15000) if !missing(Q4b2_cbsg) & !missing(Q4b2_mkp)
 	note err_yellow_spd_educ_incons: Inconsistent (>2000) report on education expenditure b/w CBSG and MKP members
+	note err_yellow_spd_educ_incons: Questions used: Q4b2_cbsg Q4b2_mkp
 	note err_yellow_extspd_educ: Spent 15k afghani or more on education, that is considered very high
+	note err_yellow_extspd_educ: Questions used: Q4b2_cbsg Q4b2_mkp
 	lab var err_yellow_spd_educ_incons "Inconsistent (>2000) report on education expenditure b/w CBSG and MKP members"
 	lab var err_yellow_extspd_educ "Spent 15k afghani or more on education, that is considered very high"
-	
+
+*>>>> this is redundant because if Q1p!=1 then Q5a_cbsg==. and Q5a_mkp!=., if Q1p==1 then Q5a_cbsg!=. and Q5a_mkp!=.
 	* (red) error 6: inconsistent response about type of dwelling
-	gen err_red_dwlng_incons = (Q5a_cbsg != Q5a_mkp) if !missing(Q5a_cbsg) & !missing(Q5a_mkp) & Q1p!=1
+	gen err_red_dwlng_incons = (Q5a_cbsg != Q5a_mkp) if Q5a_cbsg != . & Q5a_mkp != .
+	replace err_red_dwlng_incons = 0 if missing(err_red_dwlng_incons) & ((Q5a_cbsg == . & Q5a_mkp != .) | (Q5a_cbsg != . & Q5a_mkp == .))
 	note err_red_dwlng_incons: CBSG and MKP provide inconsistent response about type of dwelling
+	note err_red_dwlng_incons: Questions used: Q5a_cbsg Q5a_mkp
 	lab var err_red_dwlng_incons "CBSG and MKP provide inconsistent response about type of dwelling"
 	
 	* (red) error 7: cbsg respondent saying she/he is not a member of a cbsg
 	gen err_red_cbsg_notmmr = (Q7g1 == 0)
 	note err_red_cbsg_notmmr: CBSG member saying she/he is not a member of a CBSG
+	note err_red_cbsg_notmmr: Questions used: Q7g1
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
 	
 *>>>>> error only if match is from the same supervisor
@@ -340,21 +357,25 @@ drop if _merge == 2
 	merge m:1 matched_hhid using "near_dup_matchedid.dta", gen(xxx) keep(master match)
 	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
 	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
+	note err_red2_close_match: Questions used: All variables
 	lab var err_red2_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
 	
 	* (red) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
 	gen err_red_mkp_nt_missing = (Q1p == 1 & match_bw_cbsg_mkp == 3) if Q5m9_mkp != .
 	note err_red_mkp_nt_missing: CBSG report self (Q1p==1) and MKP questionnaire is filled
+	note err_red_mkp_nt_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_nt_missing "CBSG report self (Q1p==1) and MKP questionnaire is filled"
 	
 	* (red) error 10: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
 	gen err_red_mkp_missing = (Q1p != 1 & match_bw_cbsg_mkp != 3)
 	note err_red_mkp_missing: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
+	note err_red_mkp_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
 	* (yellow) Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
 	gen err_yellow_save = (Q7k1>Q7n) if Q7k1<. & Q7k1!=99 & Q7k1!=98 & Q7n<. & Q7n!=99 & Q7n!=98
 	note err_yellow_save: Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
+	note err_yellow_save: Questions used: Q7k1 Q7n
 	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
 	
 	* aggregate error variables
@@ -398,6 +419,8 @@ drop if _merge == 2
 	*=============================================================
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
+	local date = subinstr("`c(current_date)'", " " , "", .)
+	cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
 	use "baseline/post checks data/sweep_hh_level_data__`date'.dta", clear
 	cd "~/Dropbox/SWEEP shared/Baseline QC Reports/"
 	cap mkdir "Reports"
@@ -436,14 +459,14 @@ drop if _merge == 2
 		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		di "(RED) ``v'_round'% errors: ``v'_lab'"
+		di "(RED) ``v'_round'% errors: ``v'_lab' -- ``err'[note2]'"
 	}
 	foreach err of varlist err_yellow_* {
 		qui sum `err' if !missing(`err') & survey_status_`date' == 11, detail
 		local `v'_round = 100*round(`r(mean)', .01)
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		di "(YELLOW) ``v'_round'% errors: ``v'_lab'"
+		di "(YELLOW) ``v'_round'% errors: ``v'_lab' -- ``err'[note2]'"
 	}
 	
 	*Relationship between mkp and cbsg member
@@ -538,25 +561,30 @@ foreach i of local uniq_supervisor {
 		
 	tab error_red, miss
 	tab enum_name1 error_red_dummy, miss row
-	
-	keep if error_red_dummy
+
+
 	qui levelsof enum_name1, local(uniq_enum)
 	foreach enum of local uniq_enum {
-		
-		di "ENUMERATOR: `enum'"
-		foreach err of varlist err_red_* {
+		qui sum error_red_dummy if !missing(error_red_dummy) & survey_status_`date' == 11 & enum_name1 == "`enum'"
+		if (`r(mean)' > 0) {
 			
-			qui cap sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'", detail
-			
-			if (`r(mean)' != 0) {
-				local `v'_round = 100*round(`r(mean)', .01)
-				local `v'_lab = "``err'[note1]'"
-				*local `v'_lab: var lab `err'
-				di "(RED) ``v'_round'% errors: ``v'_lab'"
+			di "ENUMERATOR: `enum'"
+			foreach err of varlist err_red_* {
+				
+				qui sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'"
+				if (`r(N)' >  0) {
+				if (`r(mean)' > 0) {
+					local `v'_round = 100*round(`r(mean)', .01)
+					local `v'_lab = "``err'[note1]'"
+					*local `v'_lab: var lab `err'
+					di "(RED) ``v'_round'% errors: ``v'_lab' -- ``err'[note2]'"
+				}
+				}
 			}
 		}
 	}
 
+	di ""
 	di "********************************************************************"
 	di "Verify that physical parental consent form has been signed and saved"
 	di "********************************************************************"
@@ -564,7 +592,7 @@ foreach i of local uniq_supervisor {
 	list hhid if parent_consent_req
 	
 	
-	****************LIST OF Households requiring callbacks***************************
+	**********************LIST OF Households requiring callbacks********************
 	
 	log close
 	translate "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
