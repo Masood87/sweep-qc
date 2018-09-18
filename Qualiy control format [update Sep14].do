@@ -167,16 +167,16 @@ drop if _merge == 2
 	*=============================================================
 	#d ;
 	lab def survey_status 
-	1 "Household not attempted"
-	2 "Survey unsuccessful, respondent unavailable" 
-	3 "Survey not consented" 
-	4 "CBSG survey incomplete, MKP survey not started" 
-	5 "CBSG survey complete, MKP survey not started" 
+	1 "Household not located"
+	2 "Respondent unavailable, need to revisit"
+	3 "No consent/respondent not present long-term"
+	4 "CBSG survey incomplete, MKP survey not started"
+	5 "CBSG survey complete, MKP survey not started"
 	6 "MKP survey incomplete, CBSG survey not uploaded"
 	7 "MKP survey complete, CBSG survey not uploaded"
-	8 "Both surveys incomplete" 
+	8 "Both surveys incomplete"
 	9 "CBSG survey incomplete, MKP survey not uploaded"
-	10 "CBSG survey complete, MKP survey incomplete" 
+	10 "CBSG survey complete, MKP survey incomplete"
 	11 "Both survey's complete", modify;
 	#d cr
 
@@ -200,11 +200,11 @@ drop if _merge == 2
 	* Household not located
 	replace survey_status_`date' = 1 if Q1f1 == 0 
 	
-	* Survey unsuccessful, respondent unavailable
-	replace survey_status_`date' = 2 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 1, 2, 3) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
-
-	* Survey not consented
-	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 4, .o) // 4) General refusal
+	* Respondent unavailable, need to revisit
+	replace survey_status_`date' = 2 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 1, 2) // 1) CBSG respondent is not currently present, but will return; 2) Family is busy and we must return another time; 3) CBSG member is not present, and will not return in the following week
+	
+	* No consent/respondent not present long-term
+	replace survey_status_`date' = 3 if inlist(Q1l_consent, 0, .) & inlist(Q1l_whynot, 3, 4, .o) // 4) General refusal
 	
 	* CBSG survey incomplete, MKP survey not started
 	replace survey_status_`date' = 4 if Q1l_consent == 1 & Q10cbsg89 == . & (inlist(Q1r1, 0, .) & missing(Q1p)) & Q1r3 == 0
