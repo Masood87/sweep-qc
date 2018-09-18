@@ -539,32 +539,30 @@ foreach i of local uniq_supervisor {
 	tab error_red, miss
 	tab enum_name1 error_red_dummy, miss row
 	
-	
-qui levelsof enum_name1, local(uniq_enum)
-foreach enum of local uniq_enum {
-	
-	di "ENUMERATOR: `enum'"
-	foreach err of varlist err_red_* {
-		qui sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'", detail
+	keep if error_red_dummy
+	qui levelsof enum_name1, local(uniq_enum)
+	foreach enum of local uniq_enum {
 		
-		if (`r(mean)' != 0) {
-			local `v'_round = 100*round(`r(mean)', .01)
-			local `v'_lab = "``err'[note1]'"
-			*local `v'_lab: var lab `err'
-			di "(RED) ``v'_round'% errors: ``v'_lab'"
+		di "ENUMERATOR: `enum'"
+		foreach err of varlist err_red_* {
+			
+			qui cap sum `err' if !missing(`err') & survey_status_`date' == 11 & enum_name1 == "`enum'", detail
+			
+			if (`r(mean)' != 0) {
+				local `v'_round = 100*round(`r(mean)', .01)
+				local `v'_lab = "``err'[note1]'"
+				*local `v'_lab: var lab `err'
+				di "(RED) ``v'_round'% errors: ``v'_lab'"
+			}
 		}
 	}
-}
 
-	di "*****************************************************************"
+	di "********************************************************************"
 	di "Verify that physical parental consent form has been signed and saved"
-	di "*****************************************************************"
+	di "********************************************************************"
 
 	list hhid if parent_consent_req
 	
-*>>> n out of N enum fail any error >>>> anymatch if any fail
-*>>> n out of N error fail
-*>>> loop through each enum, produce perc of any RED fail, produce perc of each RED fail
 	
 	****************LIST OF Households requiring callbacks***************************
 	
@@ -573,7 +571,7 @@ foreach enum of local uniq_enum {
 	
 	restore
 	}
-*/
+
 	
 
 	
