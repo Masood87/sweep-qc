@@ -5,6 +5,7 @@
 * July 2018
 *   ========================================
 *
+*
 	*   ========================================
 	*   Global Directory
 	*   ========================================
@@ -417,6 +418,20 @@ drop if _merge == 2
 	save "baseline/post checks data/sweep_hh_level_data__`date'.dta", replace
 	
 	*=============================================================
+	*   Set log translator options
+	*=============================================================
+
+	translator set smcl2pdf logo off
+	translator set smcl2pdf fontsize 8
+	translator set smcl2pdf lmargin 0.4
+	translator set smcl2pdf rmargin 0.4
+	translator set smcl2pdf tmargin 0.4
+	translator set smcl2pdf bmargin 0.4
+	translator set smcl2pdf pagesize a4
+	translator set smcl2pdf headertext "SWEEP Baseline QC Report"
+
+	
+	*=============================================================
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
 	local date = subinstr("`c(current_date)'", " " , "", .)
@@ -427,11 +442,23 @@ drop if _merge == 2
 	cap mkdir "Reports/Overview"
 	cap log close
 	
+	* Generate variables for number of target interviews and number of completed interviews (status==11)
+	preserve
+	use "data/sampling frame.dta"
+	egen target_num_of_intvw = count(order_priority) if order_priority==1, by(district)
+	collapse target_num_of_intvw, by(district)
+	tempfile sampleframe
+	save "`sampleframe'"
+	restore
+	merge m:1 district using "`sampleframe'", gen(aggregate_sf_merge)
+	egen compl_num_of_intvw = count(district) if aggregate_sf_merge==3 & survey_status_19Sep2018 == 11, by(district)
+	
+	
 	*gen gender = 
 	
 	
 	log using "Reports/Overview/Overview__`date'.smcl", replace
-	*log using "$report/Overview_`date'"
+
 	***********************STATUS OF SURVEYS***************************
 	*OVERALL
 	
@@ -439,10 +466,20 @@ drop if _merge == 2
 	tab survey_status_`date', miss
 	
 	*Survey Status by District
-	tab district survey_status_`date', miss
-	
+	*replace compl_num_of_intvw = 0 if aggregate_sf_merge == 2
+	qui levelsof district, local(dis)
+	foreach i of local dis {
+		qui sum target_num_of_intvw if district == "`i'"
+		local target = `r(mean)'
+		qui sum compl_num_of_intvw if district == "`i'"
+		local compl = `r(N)'
+		local remain = `target' - `compl'
+		local remainP = round((`target' - `compl')/`target', .01)*100
+		di "`i': `compl' completed, `target' targetted -- REMAINING: `remain' (-`remainP'%)"
+	}
+		
 	*Order Priority from Sampling Frame
-	tab order_priority, miss
+	table survey_status_`date' order_priority
 	
 	*Duplicate hhid in CBSG data
 	list hhid dup_hhid_cbsg if dup_hhid_cbsg > 1 & !missing(dup_hhid_cbsg)
@@ -451,7 +488,7 @@ drop if _merge == 2
 	list hhid dup_hhid_mkp if dup_hhid_mkp > 1 & !missing(dup_hhid_mkp)
 	
 	*Consent
-	tab Q1l_consent, miss
+	tab Q1l_consent
 	
 	*List all errors
 	foreach err of varlist err_red* {
