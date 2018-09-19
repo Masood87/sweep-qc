@@ -174,7 +174,7 @@ drop if _merge == 2
 	4 "CBSG survey incomplete, MKP survey not started"
 	5 "CBSG survey complete, MKP survey not started"
 	6 "MKP survey incomplete, CBSG survey not uploaded"
-	7 "MKP survey complete, CBSG survey not uploaded"
+	7 "MKP survey complete, CBSG survey not uploaded or incomplete"
 	8 "Both surveys incomplete"
 	9 "CBSG survey incomplete, MKP survey not uploaded"
 	10 "CBSG survey complete, MKP survey incomplete"
@@ -218,7 +218,8 @@ drop if _merge == 2
 
 	* MKP survey complete, CBSG survey not uploaded
 	replace survey_status_`date' = 7 if match_bw_cbsg_mkp == 2 & !missing(Q10m6_mkp)
-	
+	replace survey_status_`date' = 7 if Q1l_consent == 1 & Q10cbsg89 == . & inlist(1, Q1r1, Q1r3) & Q1p != . & Q10m6_mkp != .
+
 	* Both surveys incomplete
 	replace survey_status_`date' = 8 if Q1l_consent == 1 & Q10cbsg89 == . & (((Q1r3 == 1 | Q1r1 == 1) & missing(Q10m6_mkp)) | Q1p==1)
 	replace survey_status_`date' = 8 if match_bw_cbsg_mkp==3 & Q1p==. & Q2a_cbsg==. & cbsg=="" & Q10cbsg89==. & Q1r3==. & Q1r1==.
@@ -231,7 +232,7 @@ drop if _merge == 2
 	
 	* Both surveys complete
 	replace survey_status_`date' = 11 if Q1l_consent == 1 & Q10cbsg89 != . & ((Q1p==1 & Q10m6_cbsg != .) | (Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & !missing(Q10m6_mkp)))
-	replace survey_status_`date' = 11 if Q1l_consent == 1 & Q10cbsg89 == . & Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & Q2a_mkp!=. & Q5m7_mkp!=. & Q10m6_mkp!=.
+	*replace survey_status_`date' = 11 if Q1l_consent == 1 & Q10cbsg89 == . & Q1p!=1 & (Q1r3 == 1 | Q1r1 == 1) & Q2a_mkp!=. & Q5m7_mkp!=. & Q10m6_mkp!=.
 	
 	lab val survey_status_`date' survey_status
 	tab survey_status_`date', miss
@@ -246,6 +247,13 @@ drop if _merge == 2
 *>>>>>>>> missing start and end date-time
 *>>>>>>>use Start_time and end_time in cbsg
 *>>>>>>>use start_time and end_time in mkp
+
+	* (yellow) Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
+	gen err_yellow_save = (Q7k1>Q7n) if Q7k1<. & Q7k1!=99 & Q7k1!=98 & Q7n<. & Q7n!=99 & Q7n!=98
+	note err_yellow_save: Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
+	note err_yellow_save: Questions used: Q7k1 Q7n
+	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
+
 	
 	gen err_red_missing_datetime = (missing(start_cbsg) | missing(start_mkp) | missing(end_cbsg) | missing(end_mkp)) if match_bw_cbsg_mkp == 3
 	replace err_red_missing_datetime = (missing(start_cbsg) | missing(end_cbsg)) if match_bw_cbsg_mkp == 1
@@ -266,20 +274,20 @@ drop if _merge == 2
 	gen interview_length_mkp = (end_date_mkp - start_date_mkp)/60000, a(end_date_mkp)
 	gen err_red_qui_intw_cbsg = (interview_length_cbsg <= 30) if survey_status_`date' == 11
 	gen err_red_qui_intw_mkp = (interview_length_mkp <= 20) if survey_status_`date' == 11
-	gen err_yellow_slow_intw_cbsg = (interview_length_cbsg >= 240)
-	gen err_yellow_slow_intw_mkp = (interview_length_mkp >= 180)
+*	gen err_yellow_slow_intw_cbsg = (interview_length_cbsg >= 240)
+*	gen err_yellow_slow_intw_mkp = (interview_length_mkp >= 180)
 	note err_red_qui_intw_cbsg: Length of CBSG interview is 30min or less (too short)
 	note err_red_qui_intw_cbsg: Questions used: start_cbsg end_cbsg
 	note err_red_qui_intw_mkp: Length of MKP interview is 20min or less (too short)
 	note err_red_qui_intw_mkp: Questions used: start_mkp end_mkp
-	note err_yellow_slow_intw_cbsg: Length of CBSG interview is 4hrs or more (too long)
-	note err_yellow_slow_intw_cbsg: Questions used: start_cbsg end_cbsg
-	note err_yellow_slow_intw_mkp: Length of MKP interview is 3hrs or more (too long)
-	note err_yellow_slow_intw_mkp: Questions used: start_mkp end_mkp
+*	note err_yellow_slow_intw_cbsg: Length of CBSG interview is 4hrs or more (too long)
+*	note err_yellow_slow_intw_cbsg: Questions used: start_cbsg end_cbsg
+*	note err_yellow_slow_intw_mkp: Length of MKP interview is 3hrs or more (too long)
+*	note err_yellow_slow_intw_mkp: Questions used: start_mkp end_mkp
 	lab var err_red_qui_intw_cbsg "Length of CBSG interview is 30min or less (too short)"
 	lab var err_red_qui_intw_mkp "Length of MKP interview is 20min or less (too short)"
-	lab var err_yellow_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
-	lab var err_yellow_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
+*	lab var err_yellow_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
+*	lab var err_yellow_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
 	
 	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 1
 	gen Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & !missing(Q2a_cbsg) & Q1p != 1
@@ -373,18 +381,13 @@ drop if _merge == 2
 	note err_red_mkp_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
-	* (yellow) Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
-	gen err_yellow_save = (Q7k1>Q7n) if Q7k1<. & Q7k1!=99 & Q7k1!=98 & Q7n<. & Q7n!=99 & Q7n!=98
-	note err_yellow_save: Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question
-	note err_yellow_save: Questions used: Q7k1 Q7n
-	lab var err_yellow_save "Individual savings is higher than estimate group savings, indicates lack of understanding for enumerator/question"
-	
 	* aggregate error variables
 	egen error_red = rowtotal(err_red_*)
 	lab var error_red "Number of red error variables"
 	gen error_red_dummy = (error_red > 0)
 	lab def err 1 "Has error" 0 "Doesn't have error"
 	lab val error_red_dummy err
+	lab var error_red_dummy "number of surveys with any red error/issues"
 	
 	* parental consent form
 	gen parent_consent_req = (below_18 == 1 & parentalhome == 1)
@@ -463,7 +466,7 @@ drop if _merge == 2
 	*OVERALL
 	
 	*Survey Status
-	tab survey_status_`date', miss
+	tab survey_status_`date' if aggregate_sf_merge==3, miss
 	
 	*Survey Status by District
 	*replace compl_num_of_intvw = 0 if aggregate_sf_merge == 2
@@ -559,7 +562,7 @@ foreach i of local uniq_supervisor {
 	di "*****************************************************************"
 	
 	fre survey_status_`date'
-	tab hhid survey_status_`date', miss
+	list hhid survey_status_`date' if survey_status_`date' != 11
 	
 	di ""
 	di "*****************************************************************"
@@ -597,7 +600,7 @@ foreach i of local uniq_supervisor {
 	di "*****************************************************************"
 		
 	tab error_red, miss
-	tab enum_name1 error_red_dummy, miss row
+	table enum_name1 error_red_dummy
 
 
 	qui levelsof enum_name1, local(uniq_enum)
