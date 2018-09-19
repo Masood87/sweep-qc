@@ -354,8 +354,7 @@ drop if _merge == 2
 	note err_red_cbsg_notmmr: Questions used: Q7g1
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
 	
-*>>>>> error only if match is from the same supervisor
-	* (red) error 8: more than 90% similarity in responses
+	* (red) error 8: more than 90% similarity in responses with another survey from the same supervisor
 	qui ds Q*, has(type numeric)
 	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(matched_hhid)
 		preserve
@@ -431,7 +430,7 @@ drop if _merge == 2
 	translator set smcl2pdf tmargin 0.4
 	translator set smcl2pdf bmargin 0.4
 	translator set smcl2pdf pagesize a4
-	translator set smcl2pdf headertext "SWEEP Baseline QC Report"
+	translator set smcl2pdf headertext ""
 
 	
 	*=============================================================
@@ -572,8 +571,11 @@ foreach i of local uniq_supervisor {
 	foreach err of varlist err_red_* {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		di "(RED): ``v'_lab': List of all hhid"
-		list hhid if `err'==1 & survey_status_`date' == 11
+		qui sum `err' if survey_status_19Sep2018 == 11 & aggregate_sf_merge==3
+		if (`r(mean)' > 0) {
+			di "(RED): ``v'_lab': List of all hhid"
+			list hhid if `err'==1 & survey_status_`date' == 11
+		}
 	}
 	
 	di "(RED): `err_red2_close_match[note1]': List of all hhid"
@@ -590,8 +592,11 @@ foreach i of local uniq_supervisor {
 	foreach err of varlist err_yellow_* {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		di "(YELLOW): ``v'_lab': List of all hhid"
-		list hhid if `err'==1 & survey_status_`date' == 11
+		qui sum `err' if survey_status_19Sep2018 == 11 & aggregate_sf_merge==3
+		if (`r(mean)' > 0) {
+			di "(YELLOW): ``v'_lab': List of all hhid"
+			list hhid if `err'==1 & survey_status_`date' == 11
+		}
 	}
 	
 	di ""
@@ -626,6 +631,7 @@ foreach i of local uniq_supervisor {
 
 	di ""
 	di "********************************************************************"
+	di "List of HHID with CBSG member under 18"
 	di "Verify that physical parental consent form has been signed and saved"
 	di "********************************************************************"
 
