@@ -383,6 +383,11 @@ drop if _merge == 2
 	note err_red_mkp_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
+	* (red) error 11: More than one head of houshold: Insure that only one individual is selected in Q3a_name
+	egen n_hoh_cbsg = rowtotal(Q3a_name*_cbsg)
+	egen n_hoh_mkp = rowtotal(Q3a_name*_mkp)
+	gen err_red_more_hoh = ()
+	
 	* aggregate error variables
 	egen error_red = rowtotal(err_red_*)
 	lab var error_red "Number of red error variables"
@@ -456,7 +461,7 @@ drop if _merge == 2
 	save "`sampleframe'"
 	restore
 	merge m:1 district using "`sampleframe'", gen(aggregate_sf_merge)
-	egen compl_num_of_intvw = count(district) if aggregate_sf_merge==3 & survey_status_19Sep2018 == 11, by(district)
+	egen compl_num_of_intvw = count(district) if aggregate_sf_merge==3 & survey_status_`date' == 11, by(district)
 	
 	
 	*gen gender = 
@@ -574,7 +579,7 @@ foreach i of local uniq_supervisor {
 	foreach err of varlist err_red_* {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		qui sum `err' if survey_status_19Sep2018 == 11 & aggregate_sf_merge==3
+		qui sum `err' if survey_status_`date' == 11 & aggregate_sf_merge==3
 		if (`r(mean)' > 0) {
 			di "(RED): ``v'_lab': List of all hhid"
 			list hhid if `err'==1 & survey_status_`date' == 11
@@ -595,7 +600,7 @@ foreach i of local uniq_supervisor {
 	foreach err of varlist err_yellow_* {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
-		qui sum `err' if survey_status_19Sep2018 == 11 & aggregate_sf_merge==3
+		qui sum `err' if survey_status_`date' == 11 & aggregate_sf_merge==3
 		if (`r(mean)' > 0) {
 			di "(YELLOW): ``v'_lab': List of all hhid"
 			list hhid if `err'==1 & survey_status_`date' == 11
