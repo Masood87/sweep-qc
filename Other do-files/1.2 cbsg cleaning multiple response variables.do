@@ -1,7 +1,7 @@
 * This do file cleans multiple response variables
 * it turns TRUE/FALSE into labelled data
 
-foreach i of varlist Q6g1_* Q3b* {
+foreach i of varlist Q6g1_* {
 	replace `i' = "" if inlist(`i', "FALSE", "False")
 }
 replace Q6g1_1 = "1" if inlist(Q6g1_1, "TRUE", "True")
