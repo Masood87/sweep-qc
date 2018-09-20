@@ -31,29 +31,29 @@
 	global baseline "$mystart"
 	global data="$baseline/Data"
 	global report="$baseline/Reports"
-	global clean="$data/baseline/post checks data"
+	global clean="$data/post checks data"
 	*=============================================================
 	*0. Merge MKP and CBSG Participant survey data, such that each row corresponds to one hhid
 	*=============================================================
 
 	* import raw CBSG data (csv format)
-local cbsg_raw_data "cbsg_subset__`date'"
-import delimited "$baseline/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
+local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
+import delimited "`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "$baseline/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
 	* list of variable names and save in a macro
-local cbsg_file "$baseline/Data/baseline/cbsg cleaned and labelled `date'"
+local cbsg_file "$baseline/Data/post checks data/cbsg cleaned and labelled `date'"
 qui describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
 cap rm "$baseline/Data/cbsg_subset__`yesterday'.csv"
 
 	* import raw MKP data (csv format)
-local mkp_raw_data "mkp_subset__`date'"
-import delimited "$baseline/Data/`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
+local mkp_raw_data "$baseline/Data/mkp_subset__`date'"
+import delimited "`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "$baseline/Do-files/Other do-files/2 MKP cleaning and labelling.do"
 	* list of variable names and save in a macro
-local mkp_file "$baseline/Data/baseline/mkp cleaned and labelled `date'"
+local mkp_file "$baseline/Data/post checks data/mkp cleaned and labelled `date'"
 qui describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
 cap rm "$baseline/Data/mkp_subset__`yesterday'.csv"
@@ -81,7 +81,7 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`cbsg_file'_noduphhid.dta", replace
-cap rm "$baseline/Data/baseline/cbsg cleaned and labelled `yesterday'.dta"
+cap rm "$baseline/Data/post checks data/cbsg cleaned and labelled `yesterday'.dta"
 
 * MKP: Remove duplicate and rename variables
 	* add _cbsg and _mkp suffix to matching variables
@@ -101,7 +101,7 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`mkp_file'_noduphhid.dta", replace
-cap rm "$baseline/Data/baseline/mkp cleaned and labelled `yesterday'.dta"
+cap rm "$baseline/Data/post checks data/mkp cleaned and labelled `yesterday'.dta"
 
 
 * MERGE cbsg and mkp datasets by hhid. merge 1-to-1
@@ -124,17 +124,16 @@ rename enum_supervisor supervisor_id
 * SAVE
 compress
 save "$baseline/Data/clean_merge_data__`date'.dta", replace
-cap rm "$baseline/Data/baseline/cbsg cleaned and labelled `yesterday'_noduphhid.dta"
-cap rm "$baseline/Data/baseline/mkp cleaned and labelled `yesterday'_noduphhid.dta"
+cap rm "$baseline/Data/post checks data/cbsg cleaned and labelled `yesterday'_noduphhid.dta"
+cap rm "$baseline/Data/post checks data/mkp cleaned and labelled `yesterday'_noduphhid.dta"
 
 
 	* use cleaned and merged dataset
-cd "$baseline/Data/"
-use "clean_merge_data__`date'.dta", clear
+use "$baseline/Data/clean_merge_data__`date'.dta", clear
 
 	*use "clean_merge_data__14Sep2018.dta", clear
 * MERGE with sampling frame to check how often the household selected was part of intended sample
-merge 1:1 hhid using "sampling frame.dta"
+merge 1:1 hhid using "$baseline/Data/sampling frame.dta"
 drop if _merge == 2
 	
 	/*=============================================================
@@ -365,9 +364,9 @@ drop if _merge == 2
 		preserve
 		keep hhid supervisor_id
 		rename (hhid supervisor_id) (matched_hhid match_supervisor_id)
-		save "near_dup_matchedid_`date'.dta", replace
+		save "$baseline/Data/near_dup_matchedid_`date'.dta", replace
 		restore
-	merge m:1 matched_hhid using "near_dup_matchedid_`date'.dta", gen(xxx) keep(master match)
+	merge m:1 matched_hhid using "$baseline/Data/near_dup_matchedid_`date'.dta", gen(xxx) keep(master match)
 	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
 	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
 	note err_red2_close_match: Questions used: All variables
@@ -450,8 +449,8 @@ drop if _merge == 2
 	*lab var err_income "CBSG and MKP participants report significantly inconsistent incomes"
 	
 	compress
-	save "baseline/post checks data/sweep_hh_level_data__`date'.dta", replace
-	cap rm "clean_merge_data__`yesterday'.dta"
+	save "$baseline/Data/post checks data/sweep_hh_level_data__`date'.dta", replace
+	cap rm "$baseline/Data/clean_merge_data__`yesterday'.dta"
 	*=============================================================
 	*   Set log translator options
 	*=============================================================
@@ -470,16 +469,14 @@ drop if _merge == 2
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
 	local date = subinstr("`c(current_date)'", " " , "", .)
-	cd "$baseline/Data/"
-	use "baseline/post checks data/sweep_hh_level_data__`date'.dta", clear
-	cd "$baseline/"
-	cap mkdir "Reports"
-	cap mkdir "Reports/Overview"
+	use "$baseline/Data/post checks data/sweep_hh_level_data__`date'.dta", clear
+	cap mkdir "$baseline/Reports"
+	cap mkdir "$baseline/Reports/Overview"
 	cap log close
 	
 	* Generate variables for number of target interviews and number of completed interviews (status==11)
 	preserve
-	use "data/sampling frame.dta"
+	use "$baseline/data/sampling frame.dta"
 	egen target_num_of_intvw = count(order_priority) if order_priority==1, by(district)
 	collapse target_num_of_intvw, by(district)
 	tempfile sampleframe
@@ -492,7 +489,7 @@ drop if _merge == 2
 	*gen gender = 
 	
 	
-	log using "Reports/Overview/Overview__`date'.smcl", replace
+	log using "$baseline/Reports/Overview/Overview__`date'.smcl", replace
 
 	***********************STATUS OF SURVEYS***************************
 	*OVERALL
@@ -572,13 +569,13 @@ drop if _merge == 2
 	mrtab Q6g1_* if survey_status_`date' == 11, poly sort des includemissing
 	
 	log close
-	translate "Reports/Overview/Overview__`date'.smcl" "Reports/Overview/Overview__`date'.pdf", replace
+	translate "$baseline/Reports/Overview/Overview__`date'.smcl" "$baseline/Reports/Overview/Overview__`date'.pdf", replace
 
 	*=============================================================
 	*R2. Generate one report per supervisor
 	*=============================================================
-	cap mkdir "Reports/By Supervisor"
-	cap mkdir "Reports/By Supervisor/`date'"
+	cap mkdir "$baseline/Reports/By Supervisor"
+	cap mkdir "$baseline/Reports/By Supervisor/`date'"
 	
 levelsof supervisor_id, local(uniq_supervisor)
 
@@ -586,7 +583,7 @@ foreach i of local uniq_supervisor {
 	
 	preserve
 	keep if supervisor_id == "`i'"
-	log using "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl", replace
+	log using "$baseline/Reports/By Supervisor/`date'/Report_`i'_`date'.smcl", replace
 	
 	di ""
 	di "*****************************************************************"
@@ -674,12 +671,13 @@ foreach i of local uniq_supervisor {
 	**********************LIST OF Households requiring callbacks********************
 	
 	log close
-	translate "Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
+	translate "$baseline/Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
 	
 	restore
 	}
 
-	cap rm "Data/baseline/post checks data/sweep_hh_level_data__`yesterday'.dta"
+	save "$baseline/Data/post checks data/sweep_hh_level_data__`date'.dta", replace
+	cap rm "$baseline/Data/post checks data/sweep_hh_level_data__`yesterday'.dta"
 	
 
 	
