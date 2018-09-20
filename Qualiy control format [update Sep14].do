@@ -10,12 +10,13 @@
 	*   Global Directory
 	*   ========================================
 	clear all
+	global user "Masood"
 	
 	if "$user"=="Masood" {
-			global mystart "C:\Users\"
+			global mystart "~/Dropbox/SWEEP shared/Baseline QC Reports"
 			}
 	if "$user"=="Smita" {
-			global mystart "C:\Users\"
+			global mystart "C:\Users\wb490440\OneDrive - WBG\Baseline QC Reports"
 			}
 	if "$user"=="Virginia" {
 			global mystart "C:\Users\"
@@ -25,7 +26,7 @@
 			}
 	
 	local date = subinstr("`c(current_date)'", " " , "", .)
-	global baseline "$mystart/"
+	global baseline "$mystart"
 	global raw="$baseline/raw data"
 	global report="$baseline/report"
 	global clean="$baseline/post checks data"
@@ -35,26 +36,22 @@
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "cbsg_subset__`date'"
-import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
+import delimited "$baseline/Data/`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
-do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
-	* set directory
-cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local cbsg_file "baseline/cbsg cleaned and labelled `date'"
-	* list of variable names
+do "$baseline/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
+	* list of variable names and save in a macro
+local cbsg_file "$baseline/Data/baseline/cbsg cleaned and labelled `date'"
 qui describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
 
 
 	* import raw MKP data (csv format)
 local mkp_raw_data "mkp_subset__`date'"
-import delimited "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
+import delimited "$baseline/Data/`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
-do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2 MKP cleaning and labelling.do"
-	* set directory
-cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
-local mkp_file "baseline/mkp cleaned and labelled `date'"
-	* list of variable names
+do "$baseline/Do-files/Other do-files/2 MKP cleaning and labelling.do"
+	* list of variable names and save in a macro
+local mkp_file "$baseline/Data/baseline/mkp cleaned and labelled `date'"
 qui describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
 
@@ -82,6 +79,7 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`cbsg_file'_noduphhid.dta", replace
+rm "`cbsg_file'.dta"
 
 * MKP: Remove duplicate and rename variables
 	* add _cbsg and _mkp suffix to matching variables
@@ -101,6 +99,8 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`mkp_file'_noduphhid.dta", replace
+rm "`mkp_file'.dta"
+
 
 * MERGE cbsg and mkp datasets by hhid. merge 1-to-1
 use "`cbsg_file'_noduphhid.dta", clear
@@ -115,16 +115,19 @@ replace enum_name1 = enum_name1_cbsg if enum_name1_cbsg == enum_name2_mkp & enum
 replace enum_name1 = enum_name1_cbsg if enum_name1_mkp == "" & enum_name2_mkp == "" & enum_name1 == ""
 replace enum_name1 = enum_name1_mkp if enum_name1_cbsg == "" & enum_name2_cbsg == "" & enum_name1 == ""
 * MERGE with supervisors
-merge m:1 enum_name1 using "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/master enumerators list.dta"
+merge m:1 enum_name1 using "$baseline/Data/master enumerators list.dta"
 drop if _merge==2
 drop _merge
 rename enum_supervisor supervisor_id
 * SAVE
 compress
 save "clean_merge_data__`date'.dta", replace
+rm "`cbsg_file'_noduphhid.dta"
+rm "`mkp_file'_noduphhid.dta"
+
 
 	* use cleaned and merged dataset
-cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
+cd "$baseline/Data/"
 use "clean_merge_data__`date'.dta", clear
 
 	*use "clean_merge_data__14Sep2018.dta", clear
@@ -437,9 +440,9 @@ drop if _merge == 2
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
 	local date = subinstr("`c(current_date)'", " " , "", .)
-	cd "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/"
+	cd "$baseline/Data/"
 	use "baseline/post checks data/sweep_hh_level_data__`date'.dta", clear
-	cd "~/Dropbox/SWEEP shared/Baseline QC Reports/"
+	cd "$baseline/"
 	cap mkdir "Reports"
 	cap mkdir "Reports/Overview"
 	cap log close
