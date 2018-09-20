@@ -26,10 +26,12 @@
 			}
 	
 	local date = subinstr("`c(current_date)'", " " , "", .)
+	local yesterday : di %td daily("`c(current_date)'", "DMY") - 1
+	
 	global baseline "$mystart"
-	global raw="$baseline/raw data"
-	global report="$baseline/report"
-	global clean="$baseline/post checks data"
+	global data="$baseline/Data"
+	global report="$baseline/Reports"
+	global clean="$data/baseline/post checks data"
 	*=============================================================
 	*0. Merge MKP and CBSG Participant survey data, such that each row corresponds to one hhid
 	*=============================================================
@@ -43,7 +45,7 @@ do "$baseline/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
 local cbsg_file "$baseline/Data/baseline/cbsg cleaned and labelled `date'"
 qui describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
-
+cap rm "$baseline/Data/cbsg_subset__`yesterday'.csv"
 
 	* import raw MKP data (csv format)
 local mkp_raw_data "mkp_subset__`date'"
@@ -54,7 +56,7 @@ do "$baseline/Do-files/Other do-files/2 MKP cleaning and labelling.do"
 local mkp_file "$baseline/Data/baseline/mkp cleaned and labelled `date'"
 qui describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
-
+cap rm "$baseline/Data/mkp_subset__`yesterday'.csv"
 
 	* matching variable names in both datasets minus hhid
 local same : list var2 & var1
@@ -79,7 +81,7 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`cbsg_file'_noduphhid.dta", replace
-rm "`cbsg_file'.dta"
+cap rm "$baseline/Data/baseline/cbsg cleaned and labelled `yesterday'.dta"
 
 * MKP: Remove duplicate and rename variables
 	* add _cbsg and _mkp suffix to matching variables
@@ -99,7 +101,7 @@ bysort hhid: keep if _n == _N
 bys hhid: keep if _n == _N
 compress
 save "`mkp_file'_noduphhid.dta", replace
-rm "`mkp_file'.dta"
+cap rm "$baseline/Data/baseline/mkp cleaned and labelled `yesterday'.dta"
 
 
 * MERGE cbsg and mkp datasets by hhid. merge 1-to-1
@@ -121,9 +123,9 @@ drop _merge
 rename enum_supervisor supervisor_id
 * SAVE
 compress
-save "clean_merge_data__`date'.dta", replace
-rm "`cbsg_file'_noduphhid.dta"
-rm "`mkp_file'_noduphhid.dta"
+save "$baseline/Data/clean_merge_data__`date'.dta", replace
+cap rm "$baseline/Data/baseline/cbsg cleaned and labelled `yesterday'_noduphhid.dta"
+cap rm "$baseline/Data/baseline/mkp cleaned and labelled `yesterday'_noduphhid.dta"
 
 
 	* use cleaned and merged dataset
@@ -363,13 +365,14 @@ drop if _merge == 2
 		preserve
 		keep hhid supervisor_id
 		rename (hhid supervisor_id) (matched_hhid match_supervisor_id)
-		save "near_dup_matchedid.dta", replace
+		save "near_dup_matchedid_`date'.dta", replace
 		restore
-	merge m:1 matched_hhid using "near_dup_matchedid.dta", gen(xxx) keep(master match)
+	merge m:1 matched_hhid using "near_dup_matchedid_`date'.dta", gen(xxx) keep(master match)
 	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
 	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
 	note err_red2_close_match: Questions used: All variables
 	lab var err_red2_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
+	cap rm "$baseline/Data/near_dup_matchedid_`yesterday'.dta"
 	
 	* (red) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
 	gen err_red_mkp_nt_missing = (Q1p == 1 & match_bw_cbsg_mkp == 3) if Q5m9_mkp != .
@@ -383,10 +386,32 @@ drop if _merge == 2
 	note err_red_mkp_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
-	* (red) error 11: More than one head of houshold: Insure that only one individual is selected in Q3a_name
+	* (red) error 11: More than one or no head of houshold, ensure that only one individual is selected in Q3a_name
 	egen n_hoh_cbsg = rowtotal(Q3a_name*_cbsg)
 	egen n_hoh_mkp = rowtotal(Q3a_name*_mkp)
-	gen err_red_more_hoh = ()
+	egen n_hoh = rowtotal(n_hoh_cbsg n_hoh_mkp)
+	gen err_red_incons_hoh = ((n_hoh_cbsg>1 | n_hoh_mkp>1) | n_hoh>1 | missing(n_hoh))
+	note err_red_incons_hoh: More than one or no head of houshold, ensure that only one individual is selected in Q3a_name
+	note err_red_incons_hoh: Questions used: Roster Q3a_name in cbsg and mkp, and Q1p
+	lab var err_red_incons_hoh "More than one or no head of houshold, ensure in Q3a_name only one individual is selected"
+	
+	* (red) error 12: More than one individual identified as respondent, ensure that only one individual is selected in Q3c
+	egen n_self_resp_cbsg = rowtotal(Q3c_name*_cbsg)
+	egen n_self_resp_mkp = rowtotal(Q3c_name*_mkp)
+	egen n_self_resp = rowtotal(n_self_resp_cbsg n_self_resp_mkp)
+	gen err_red_incons_self_resp = ((n_self_resp_cbsg>1 | n_self_resp_mkp>1) | n_self_resp>1 | missing(n_self_resp))
+	note err_red_incons_self_resp: More than one individual identified as respondent, ensure that only one individual is selected in Q3c
+	note err_red_incons_self_resp: Questions used: Roster Q3c_name in cbsg and mkp, and Q1p
+	lab var err_red_incons_self_resp "More than one individual identified as respondent, ensure that only one individual is selected in Q3c"
+	
+	* (red) error 13: No individual is CBSG member, ensure at least one individual is selected for Q3f
+	egen n_cbsg_member_cbsg = rowtotal(Q3f_name*_cbsg)
+	egen n_cbsg_member_mkp = rowtotal(Q3f_name*_mkp)
+	egen n_cbsg_member = rowtotal(n_cbsg_member_cbsg n_cbsg_member_mkp)
+	gen err_red_no_cbsg_member = (inlist(n_cbsg_member, 0, .))
+	note err_red_no_cbsg_member: No individual is CBSG member, ensure at least one individual is selected for Q3f
+	note err_red_no_cbsg_member: Questions used: Roster Q3f_name in cbsg and mkp, Q1p
+	lab var err_red_no_cbsg_member "No individual is CBSG member, ensure at least one individual is selected for Q3f"
 	
 	* aggregate error variables
 	egen error_red = rowtotal(err_red_*)
@@ -426,7 +451,7 @@ drop if _merge == 2
 	
 	compress
 	save "baseline/post checks data/sweep_hh_level_data__`date'.dta", replace
-	
+	cap rm "clean_merge_data__`yesterday'.dta"
 	*=============================================================
 	*   Set log translator options
 	*=============================================================
@@ -654,6 +679,7 @@ foreach i of local uniq_supervisor {
 	restore
 	}
 
+	cap rm "Data/baseline/post checks data/sweep_hh_level_data__`yesterday'.dta"
 	
 
 	
