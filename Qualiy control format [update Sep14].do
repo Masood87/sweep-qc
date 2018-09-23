@@ -671,7 +671,7 @@ foreach i of local uniq_supervisor {
 	**********************LIST OF Households requiring callbacks********************
 	
 	log close
-	translate "$baseline/Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
+	translate "$baseline/Reports/By Supervisor/`date'/Report_`i'_`date'.smcl" "$baseline/Reports/By Supervisor/`date'/Report_`i'_`date'.pdf", replace
 	
 	restore
 	}
