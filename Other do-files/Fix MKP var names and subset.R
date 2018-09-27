@@ -3,7 +3,7 @@ library(tidyverse)
 rm(list = ls())
 
 # import the data
-filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_MPK_Final_2018_09_20_02_16_11_628653.csv"
+filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_MPK_Final_2018_09_23_02_12_26_078174.csv"
 mkp <- read_csv(filename)
 
 # parsing variable names and constract new variable names

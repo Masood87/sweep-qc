@@ -4,7 +4,7 @@ library(tidyverse)
 rm(list = ls())
 
 # import the data
-filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_CBSG_Final_2018_09_20_02_33_36_675734.csv"
+filename <- "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/SWEEP_CBSG_Final_2018_09_23_02_17_52_565455.csv"
 cbsg <- read_csv(filename)
 
 # parsing variable names and constract new variable names
