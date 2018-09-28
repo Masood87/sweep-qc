@@ -39,8 +39,8 @@
 	* Paste file names and run fix varnames
 global cbsgfile "SWEEP_CBSG_Final_2018_09_28_03_52_43_397332"
 global mkpfile "SWEEP_MPK_Final_2018_09_28_03_23_10_954956"
-do "$baseline/Do-files/Other do-files/fix varnames.do"				// fix varnames + SUBSET
-*do "$baseline/Do-files/Other do-files/fix varnames w/o subset"		// fix varnames + FULL SET
+*do "$baseline/Do-files/Other do-files/fix varnames.do"				// fix varnames + SUBSET
+do "$baseline/Do-files/Other do-files/fix varnames w/o subset"		// fix varnames + FULL SET
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
