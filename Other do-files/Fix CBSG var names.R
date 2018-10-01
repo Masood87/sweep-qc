@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_CBSG_Final_2018_09_28_03_52_43_397332.csv" 
+filename <- "SWEEP_CBSG_Final_2018_10_01_00_06_06_946310.csv" 
 cbsg <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
@@ -29,4 +29,4 @@ cbsg$simserial <- gsub("[a-zA-Z]", "", cbsg$simserial)
 # remove objects 
 # rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) 
 
-write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") 
+write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 

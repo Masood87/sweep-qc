@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_MPK_Final_2018_09_28_03_23_10_954956.csv" 
+filename <- "SWEEP_MPK_Final_2018_10_01_00_09_48_439749.csv" 
 mkp <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
@@ -29,4 +29,4 @@ mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 # remove objects 
 # rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) 
 
-write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") 
+write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 

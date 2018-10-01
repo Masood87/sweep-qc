@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_MPK_Final_2018_09_30_01_06_39_621171.csv" 
+filename <- "SWEEP_MPK_Final_2018_10_01_00_09_48_439749.csv" 
 mkp <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
@@ -31,4 +31,4 @@ mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 
 # subset 
 mkp <- select(mkp, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q2_estimate, contains("Q2x"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q5a, Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"), start_time, end_time) 
-write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") 
+write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 
