@@ -22,6 +22,15 @@ newvarnames <- data.frame(oldnames=fullnames, newnames=vnames, numerics=numerics
 # rename mkp file with new var names 
 colnames(mkp) <- newvarnames$newnames 
 
+mkp$Q10m6[mkp$Q10m6=="Strongly disagree"] <- "1" 
+mkp$Q10m6[mkp$Q10m6=="Disagree"] <- "2" 
+mkp$Q10m6[mkp$Q10m6=="Neither agree nor disagree"] <- "3" 
+mkp$Q10m6[mkp$Q10m6=="Agree"] <- "4" 
+mkp$Q10m6[mkp$Q10m6=="Strongly agree"] <- "5" 
+mkp$Q10m6[mkp$Q10m6=="Do not know"] <- "98" 
+mkp$Q10m6[mkp$Q10m6=="Refuse to answer"] <- "99" 
+mkp$Q10m6 <- as.numeric(mkp$Q10m6) 
+
 # remove alpha characters from simserial variable 
 mkp$simserial <- gsub("n/a", "", mkp$simserial) 
 mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial) 
