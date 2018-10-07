@@ -72,6 +72,29 @@ quietly: file write rcode ///
 	`"# rename mkp file with new var names "' _newline ///
 	`"colnames(mkp) <- newvarnames\$newnames "' _newline ///
 	`""' _newline ///
+	`"# fix format issue of certain columns"' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Strongly disagree"] <- "1" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Disagree"] <- "2" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Neither agree nor disagree"] <- "3" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Agree"] <- "4" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Strongly agree"] <- "5" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Do not know"] <- "98" "' _newline ///
+	`"mkp\$Q10m6[mkp\$Q10m6=="Refuse to answer"] <- "99" "' _newline ///
+	`"mkp\$Q10m6 <- as.numeric(mkp\$Q10m6) "' _newline ///
+	`""' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Single family house"] <- "1" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Part of a shared house/Compound"] <- "2" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Separate apartment"] <- "3" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Shared apartment"] <- "4" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Tent"] <- "5" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Temporary shelter/shack/hut"] <- "6" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Other"] <- "96" "' _newline ///
+	`""' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Yes"] <- "1" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="No"] <- "0" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Do not know"] <- "98" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Refuse to answer"] <- "99" "' _newline ///
+	`""' _newline ///
 	`"# remove alpha characters from simserial variable "' _newline ///
 	`"mkp\$simserial <- gsub("n/a", "", mkp\$simserial) "' _newline ///
 	`"mkp\$simserial <- gsub("[a-zA-Z]", "", mkp\$simserial) "' _newline ///

@@ -93,6 +93,11 @@ quietly: file write rcode ///
 	`"mkp\$Q5a[mkp\$Q5a=="Temporary shelter/shack/hut"] <- "6" "' _newline ///
 	`"mkp\$Q5a[mkp\$Q5a=="Other"] <- "96" "' _newline ///
 	`""' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Yes"] <- "1" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="No"] <- "0" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Do not know"] <- "98" "' _newline ///
+	`"mkp\$Q5m9[mkp\$Q5m9=="Refuse to answer"] <- "99" "' _newline ///
+	`""' _newline ///
 	`"# remove alpha characters from simserial variable "' _newline ///
 	`"mkp\$simserial <- gsub("n/a", "", mkp\$simserial) "' _newline ///
 	`"mkp\$simserial <- gsub("[a-zA-Z]", "", mkp\$simserial) "' _newline ///
