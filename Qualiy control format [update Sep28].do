@@ -25,8 +25,9 @@
 			global mystart "C:\Users\"
 			}
 	
-	local date = subinstr("`c(current_date)'", " " , "", .)
-	local yesterday : di %td daily("`c(current_date)'", "DMY") - 1
+	
+	local date : di %tdDmCY daily(c(current_date), "DMY")
+	local yesterday : di %tdDmCY daily(c(current_date), "DMY") - 1
 	
 	global baseline "$mystart"
 	global data="$baseline/Data"
@@ -47,7 +48,7 @@ local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
 import delimited "`cbsg_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "$baseline/Do-files/Other do-files/1 CBSG cleaning and labelling.do"
-	* list of variable names and save in a macro
+	* list of variable names and store in a macro
 local cbsg_file "$baseline/Data/post checks data/cbsg cleaned and labelled `date'"
 qui describe using "`cbsg_file'.dta", varlist
 local var2 `r(varlist)'
@@ -58,7 +59,7 @@ local mkp_raw_data "$baseline/Data/mkp_subset__`date'"
 import delimited "`mkp_raw_data'.csv", varnames(1) case(preserve) encoding(utf8) clear
 	* cleans, labels, and prepares Stata file for CBSG data
 do "$baseline/Do-files/Other do-files/2 MKP cleaning and labelling.do"
-	* list of variable names and save in a macro
+	* list of variable names and store in a macro
 local mkp_file "$baseline/Data/post checks data/mkp cleaned and labelled `date'"
 qui describe using "`mkp_file'.dta", varlist
 local var1 `r(varlist)'
