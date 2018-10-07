@@ -41,7 +41,7 @@ cap format %25.0g simserial
 cap format %12.0g sfnumber*
 
 * drop empty variables.. search dropmiss and install dm89_2
-dropmiss *NA, force
+cap dropmiss *NA, force
 			
 * apply value labels
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.3 cbsg lab def.do"

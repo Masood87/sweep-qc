@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_MPK_Final_2018_10_04_22_56_30_869083.csv" 
+filename <- "SWEEP_MPK_Final_2018_10_06_23_57_48_337873.csv" 
 mkp <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
@@ -30,5 +30,7 @@ mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 # rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) 
 
 # subset 
+remove_cols <- grep("_NA", names(mkp)) 
+mkp <- mkp[, -remove_cols] 
 mkp <- select(mkp, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q2_estimate, contains("Q2x"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q5a, Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"), start_time, end_time) 
 write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 
