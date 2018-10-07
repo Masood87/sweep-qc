@@ -40,8 +40,8 @@
 	* Paste file names and run fix varnames
 global cbsgfile "SWEEP_CBSG_Final_2018_10_07_03_47_51_479460"
 global mkpfile "SWEEP_MPK_Final_2018_10_06_23_57_48_337873"
-*do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
-do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
+do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
+*do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
@@ -114,7 +114,7 @@ cap rm "$baseline/Data/post checks data/mkp cleaned and labelled `yesterday'.dta
 * MERGE cbsg and mkp datasets by hhid. merge 1-to-1
 use "`cbsg_file'_noduphhid.dta", clear
 merge m:m hhid using "`mkp_file'_noduphhid.dta"
-local date = subinstr("`c(current_date)'", " " , "", .)
+local date : di %tdDmCY daily(c(current_date), "DMY")
 rename _merge match_bw_cbsg_mkp
 * ENUMERATOR variables
 gen enum_name1 = enum_name1_cbsg if enum_name1_cbsg != "" & enum_name1_cbsg == enum_name1_mkp & enum_name1_cbsg != enum_name2_cbsg
@@ -475,7 +475,7 @@ drop if _merge == 2
 	*=============================================================
 	*R1. Generate Overview report for AKF (including regional managers), Sayara, World Bank
 	*=============================================================
-	local date = subinstr("`c(current_date)'", " " , "", .)
+	local date : di %tdDmCY daily(c(current_date), "DMY")
 	use "$baseline/Data/post checks data/sweep_hh_level_data__`date'.dta", clear
 	cap mkdir "$baseline/Reports"
 	cap mkdir "$baseline/Reports/Overview"
