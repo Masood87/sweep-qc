@@ -38,7 +38,7 @@ quietly: file write rcode ///
 	`"# remove objects "' _newline ///
 	`"# rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) "' _newline ///
 	`""' _newline ///
-	`"write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") "'
+	`"write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") "'
 quietly: file close rcode
 
 shell /Library/Frameworks/R.framework/Resources/bin/R --vanilla <"Fix CBSG var names.R"
@@ -79,7 +79,7 @@ quietly: file write rcode ///
 	`"# remove objects "' _newline ///
 	`"# rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) "' _newline ///
 	`""' _newline ///
-	`"write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") "'
+	`"write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") "'
 quietly: file close rcode
 
 shell /Library/Frameworks/R.framework/Resources/bin/R --vanilla <"Fix MKP var names.R"

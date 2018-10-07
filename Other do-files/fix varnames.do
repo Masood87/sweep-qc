@@ -41,7 +41,7 @@ quietly: file write rcode ///
 	`"# subset "' _newline ///
 	`"# cbsg <- select(cbsg, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q4c, Q5a, contains("Q6g1"), Q7g1, Q7f1, Q7f2, Q2_estimate, starts_with("Q2x"), starts_with("Q5m"), Q6a, Q6b, Q6c, Q6d, Q6e, Q6f, Q7k1, Q7n, starts_with("Q10"), Start_time, end_time) %>% rename(start_time = Start_time) "' _newline ///
 	`"cbsg <- select(cbsg, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q4c, Q5a, contains("Q6g1"), Q7g1, Q7f1, Q7f2, Q2_estimate, starts_with("Q2x"), starts_with("Q5m"), Q6a, Q6b, Q6c, Q6d, Q6e, Q6f, Q7k1, Q7n, Q10cbsg89, Q10m6, Start_time, end_time) %>% rename(start_time = Start_time) "' _newline ///
-	`"write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") "'
+	`"write_csv(cbsg, paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/cbsg_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") "'
 quietly: file close rcode
 
 shell /Library/Frameworks/R.framework/Resources/bin/R --vanilla <"Fix CBSG var names and subset.R"
@@ -75,6 +75,7 @@ quietly: file write rcode ///
 	`"# rename mkp file with new var names "' _newline ///
 	`"colnames(mkp) <- newvarnames\$newnames "' _newline ///
 	`""' _newline ///
+	`"# fix format issue of certain columns"' _newline ///
 	`"mkp\$Q10m6[mkp\$Q10m6=="Strongly disagree"] <- "1" "' _newline ///
 	`"mkp\$Q10m6[mkp\$Q10m6=="Disagree"] <- "2" "' _newline ///
 	`"mkp\$Q10m6[mkp\$Q10m6=="Neither agree nor disagree"] <- "3" "' _newline ///
@@ -83,6 +84,14 @@ quietly: file write rcode ///
 	`"mkp\$Q10m6[mkp\$Q10m6=="Do not know"] <- "98" "' _newline ///
 	`"mkp\$Q10m6[mkp\$Q10m6=="Refuse to answer"] <- "99" "' _newline ///
 	`"mkp\$Q10m6 <- as.numeric(mkp\$Q10m6) "' _newline ///
+	`""' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Single family house"] <- "1" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Part of a shared house/Compound"] <- "2" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Separate apartment"] <- "3" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Shared apartment"] <- "4" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Tent"] <- "5" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Temporary shelter/shack/hut"] <- "6" "' _newline ///
+	`"mkp\$Q5a[mkp\$Q5a=="Other"] <- "96" "' _newline ///
 	`""' _newline ///
 	`"# remove alpha characters from simserial variable "' _newline ///
 	`"mkp\$simserial <- gsub("n/a", "", mkp\$simserial) "' _newline ///
@@ -95,7 +104,7 @@ quietly: file write rcode ///
 	`"remove_cols <- grep("_NA", names(mkp)) "' _newline ///
 	`"mkp <- mkp[, -remove_cols] "' _newline ///
 	`"mkp <- select(mkp, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q2_estimate, contains("Q2x"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q5a, Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"), start_time, end_time) "' _newline ///
-	`"write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") "'
+	`"write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") "'
 quietly: file close rcode
 
 shell /Library/Frameworks/R.framework/Resources/bin/R --vanilla <"Fix MKP var names and subset.R"

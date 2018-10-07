@@ -22,6 +22,7 @@ newvarnames <- data.frame(oldnames=fullnames, newnames=vnames, numerics=numerics
 # rename mkp file with new var names 
 colnames(mkp) <- newvarnames$newnames 
 
+# fix format issue of certain columns
 mkp$Q10m6[mkp$Q10m6=="Strongly disagree"] <- "1" 
 mkp$Q10m6[mkp$Q10m6=="Disagree"] <- "2" 
 mkp$Q10m6[mkp$Q10m6=="Neither agree nor disagree"] <- "3" 
@@ -30,6 +31,14 @@ mkp$Q10m6[mkp$Q10m6=="Strongly agree"] <- "5"
 mkp$Q10m6[mkp$Q10m6=="Do not know"] <- "98" 
 mkp$Q10m6[mkp$Q10m6=="Refuse to answer"] <- "99" 
 mkp$Q10m6 <- as.numeric(mkp$Q10m6) 
+
+mkp$Q5a[mkp$Q5a=="Single family house"] <- "1" 
+mkp$Q5a[mkp$Q5a=="Part of a shared house/Compound"] <- "2" 
+mkp$Q5a[mkp$Q5a=="Separate apartment"] <- "3" 
+mkp$Q5a[mkp$Q5a=="Shared apartment"] <- "4" 
+mkp$Q5a[mkp$Q5a=="Tent"] <- "5" 
+mkp$Q5a[mkp$Q5a=="Temporary shelter/shack/hut"] <- "6" 
+mkp$Q5a[mkp$Q5a=="Other"] <- "96" 
 
 # remove alpha characters from simserial variable 
 mkp$simserial <- gsub("n/a", "", mkp$simserial) 
@@ -42,4 +51,4 @@ mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 remove_cols <- grep("_NA", names(mkp)) 
 mkp <- mkp[, -remove_cols] 
 mkp <- select(mkp, start:Q2b_1, starts_with("Q2b"), contains("Q2l"), contains("Q2n1"), contains("Q2n2"), starts_with("Q2g"), Q2_estimate, contains("Q2x"), starts_with("Q3a"), starts_with("Q3c"), starts_with("Q3f"), Q4b1, Q4b2, Q5a, Q5m2, Q5m3, Q5m4, Q5m5, Q5m6, Q5m7, Q5m8, Q5m9, Q5m10, Q5m1, starts_with("Q10"), start_time, end_time) 
-write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 
+write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") 
