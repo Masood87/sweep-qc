@@ -40,6 +40,11 @@ mkp$Q5a[mkp$Q5a=="Tent"] <- "5"
 mkp$Q5a[mkp$Q5a=="Temporary shelter/shack/hut"] <- "6" 
 mkp$Q5a[mkp$Q5a=="Other"] <- "96" 
 
+mkp$Q5m9[mkp$Q5m9=="Yes"] <- "1" 
+mkp$Q5m9[mkp$Q5m9=="No"] <- "0" 
+mkp$Q5m9[mkp$Q5m9=="Do not know"] <- "98" 
+mkp$Q5m9[mkp$Q5m9=="Refuse to answer"] <- "99" 
+
 # remove alpha characters from simserial variable 
 mkp$simserial <- gsub("n/a", "", mkp$simserial) 
 mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial) 
