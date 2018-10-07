@@ -44,5 +44,5 @@ do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2.4 mkp l
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/2.5 mkp lab var.do"
 
 * save
-local date = subinstr("`c(current_date)'", " " , "", .)
+local date : di %tdDmCY daily(c(current_date), "DMY")
 save "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/post checks data/mkp cleaned and labelled `date'.dta", replace

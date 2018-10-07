@@ -54,5 +54,5 @@ do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.5 cbsg 
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.6 cbsg variable note.do"
 
 * save
-local date = subinstr("`c(current_date)'", " " , "", .)
+local date : di %tdDmCY daily(c(current_date), "DMY")
 save "~/Dropbox/SWEEP shared/Baseline QC Reports/Data/post checks data/cbsg cleaned and labelled `date'.dta", replace
