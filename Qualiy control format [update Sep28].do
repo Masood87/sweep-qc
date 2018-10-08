@@ -609,9 +609,11 @@ foreach i of local uniq_supervisor {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
 		qui sum `err' if survey_status_`date' == 11 & aggregate_sf_merge==3
-		if (`r(mean)' > 0) {
-			di "(RED): ``v'_lab': List of all hhid"
-			list hhid if `err'==1 & survey_status_`date' == 11
+		if (`r(N)' > 0) {
+			if (`r(mean)' > 0) {
+				di "(RED): ``v'_lab': List of all hhid"
+				list hhid if `err'==1 & survey_status_`date' == 11
+			}
 		}
 	}
 	
@@ -630,9 +632,11 @@ foreach i of local uniq_supervisor {
 		local `v'_lab = "``err'[note1]'"
 		*local `v'_lab: var lab `err'
 		qui sum `err' if survey_status_`date' == 11 & aggregate_sf_merge==3
-		if (`r(mean)' > 0) {
-			di "(YELLOW): ``v'_lab': List of all hhid"
-			list hhid if `err'==1 & survey_status_`date' == 11
+		if (`r(N)' > 0) {
+			if (`r(mean)' > 0) {
+				di "(YELLOW): ``v'_lab': List of all hhid"
+				list hhid if `err'==1 & survey_status_`date' == 11
+			}
 		}
 	}
 	
