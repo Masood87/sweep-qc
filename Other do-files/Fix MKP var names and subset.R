@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_MPK_Final_2018_10_06_23_57_48_337873.csv" 
+filename <- "SWEEP_MPK_Final_2018_10_08_00_00_42_044546.csv" 
 mkp <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 

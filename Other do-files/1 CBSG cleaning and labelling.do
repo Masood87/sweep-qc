@@ -2,7 +2,7 @@
 
 
 * Turn Yes/No questions into 1/0
-do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/0.1 turn yes_no to 1_0.do"
+*do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/0.1 turn yes_no to 1_0.do"
 
 * cleaning multiple response questions
 do "~/Dropbox/SWEEP shared/Baseline QC Reports/Do-files/Other do-files/1.2 cbsg cleaning multiple response variables.do"

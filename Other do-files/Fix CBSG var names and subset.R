@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_CBSG_Final_2018_10_07_03_47_51_479460.csv" 
+filename <- "SWEEP_CBSG_Final_2018_10_08_00_26_41_385731.csv" 
 cbsg <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
