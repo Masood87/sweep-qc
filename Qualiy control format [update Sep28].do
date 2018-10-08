@@ -722,12 +722,12 @@ foreach i of local uniq_supervisor {
 	}
 	postclose `memhold'
 	
-	use `results', clear // open the dataset we created
+	use `results', clear // open the dataset we created in the cloud/meomry
 	compress
 	
-	gen label = labels1+labels2 if labels1!="" & labels2!=""
-	replace label = labels1 if labels1!="" & labels2==""
-	replace label = varname if label==""
+	gen label = labels1 + "; " + labels2 if labels1 != "" & labels2 != ""
+	replace label = labels1 if labels1 != "" & labels2 == ""
+	replace label = varname if label == ""
 	
 	export excel using "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/var_labels__`date'.xlsx", firstrow(variables) replace
 	
