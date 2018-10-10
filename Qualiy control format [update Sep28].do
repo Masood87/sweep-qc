@@ -38,8 +38,8 @@
 	*=============================================================
 
 	* Paste file names and run fix varnames
-global cbsgfile "SWEEP_CBSG_Final_2018_10_08_00_26_41_385731"
-global mkpfile "SWEEP_MPK_Final_2018_10_08_00_00_42_044546"
+global cbsgfile "SWEEP_CBSG_Final_2018_10_10_01_57_15_083870"
+global mkpfile "SWEEP_MPK_Final_2018_10_10_01_29_37_203080"
 do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
 *do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
@@ -731,7 +731,5 @@ foreach i of local uniq_supervisor {
 	
 	export excel using "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/var_labels__`date'.xlsx", firstrow(variables) replace
 	
-	
-	
-	
+
 	
