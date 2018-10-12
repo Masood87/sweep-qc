@@ -38,8 +38,8 @@
 	*=============================================================
 
 	* Paste file names and run fix varnames
-global cbsgfile "SWEEP_CBSG_Final_2018_10_10_01_57_15_083870"
-global mkpfile "SWEEP_MPK_Final_2018_10_10_01_29_37_203080"
+global cbsgfile "SWEEP_CBSG_Final_2018_10_11_01_20_39_480805"
+global mkpfile "SWEEP_MPK_Final_2018_10_11_00_51_33_824177"
 do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
 *do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
@@ -367,7 +367,11 @@ drop if _merge == 2
 	
 	* (red) error 8: more than 90% similarity in responses with another survey from the same supervisor
 	qui ds Q*, has(type numeric)
-	percentmatch `r(varlist)', gen(pmatch) idvar(hhid) matchedid(matched_hhid)
+	local numvars `r(varlist)'
+	qui ds Q3a* Q3c* Q3f*
+	local nousevars `r(varlist)'
+	local varlist : list numvars - nousevars
+	percentmatch `varlist' if survey_status_`date' > 1, gen(pmatch) idvar(hhid) matchedid(matched_hhid)
 		preserve
 		keep hhid supervisor_id
 		rename (hhid supervisor_id) (matched_hhid match_supervisor_id)
@@ -377,6 +381,10 @@ drop if _merge == 2
 	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
 	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
 	note err_red2_close_match: Questions used: All variables
+	note matched_hhid: Matched hhid
+	note pmatch: Percent matched
+	lab var matched_hhid "Matched hhid"
+	lab var pmatch "Percent matched"
 	lab var err_red2_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
 	cap rm "$baseline/Data/near_dup_matchedid_`yesterday'.dta"
 	
@@ -693,24 +701,39 @@ foreach i of local uniq_supervisor {
 	********************** NEW SUPERVISORS REPORT IN EXCEL **********************
 	local date : di %tdDmCY daily(c(current_date), "DMY")
 	use "$baseline/Data/post checks data/sweep_hh_level_data__`date'.dta", clear
-	global keep survey_status_`date' hhid province district village ///
+	
+	egen ERRORS = rowtotal(err_red_missing_datetime err_red_qui_intw_cbsg err_red_qui_intw_mkp err_red_numhhmem err_red2_hh_members err_red_income_cbsg err_red_income_mkp err_red_dwlng_incons err_red_cbsg_notmmr err_red2_close_match err_red_mkp_nt_missing err_red_mkp_missing err_red_incons_hoh err_red_incons_self_resp err_red_no_cbsg_member)
+	note ERRORS: TOTAL RED ERRORS
+	lab var ERRORS "TOTAL RED ERRORS"
+	
+	global keep ERRORS survey_status_`date' hhid province district village ///
 			cdc cdchead_info ///
 			date* today* ///
 			enum_name* *supervisor* ///
-			start_cbsg start_time_cbsg start_mkp start_time_mkp ///
+			submission_time* start_cbsg start_time_cbsg start_mkp start_time_mkp ///
 			end_cbsg end_time_cbsg end_mkp end_time_mkp ///
-			sfcbsg_resp_cbsg resp_corr_cbsg cbsg_resp_cbsg sfcbsg_resp_mkp resp_corr_mkp cbsg_resp_mkp ///
+			sfcbsg_resp_cbsg resp_corr_cbsg cbsg_resp_cbsg ///
 			sfnumber1_cbsg sfnumber2_cbsg sfnumber3_cbsg sfnumber1_mkp sfnumber2_mkp sfnumber3_mkp ///
-			err_red_missing_datetime err_red_qui_intw_cbsg err_red_qui_intw_mkp err_red_numhhmem err_red2_hh_members err_red_income_cbsg err_red_income_mkp err_red_dwlng_incons err_red_cbsg_notmmr err_red2_close_match err_red_mkp_nt_missing err_red_mkp_missing err_red_incons_hoh err_red_incons_self_resp err_red_no_cbsg_member
+			err_red_missing_datetime err_red_qui_intw_cbsg err_red_qui_intw_mkp err_red_numhhmem err_red2_hh_members err_red_income_cbsg err_red_income_mkp err_red_dwlng_incons err_red_cbsg_notmmr err_red2_close_match hhid pmatch matched_hhid err_red_mkp_nt_missing err_red_mkp_missing err_red_incons_hoh err_red_incons_self_resp err_red_no_cbsg_member
+	
 	keep $keep
 	order $keep
+	sort submission_time_cbsg
 	foreach i of varlist err_red* {
 		gen comment_`i' = ""
 		order comment_`i', a(`i')
+		note comment_`i': COMMENT
 	}
+	note survey_status_`date': Survey Status
 	export excel using "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/Report_Supervisors__`date'.xlsx", firstrow(variables) replace
+	save "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/Report_Supervisors__`date'.dta", replace
 	
-	
+	gen obs = 1
+	collapse (sum) obs (mean) err_red* if survey_status_12Oct2018 == 11, by(province enum_name1)
+	export excel using "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/Report_Enumerators_RED__`date'.xlsx", firstrow(variables) replace
+	save "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/Report_Enumerators_RED__`date'.dta", replace
+
+	use "/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Reports/By Supervisor/Report_Supervisors__`date'.dta", clear
 	tempname memhold
 	tempfile results
 	postfile `memhold' str2045(varname labels1 labels2) using "`results'"
