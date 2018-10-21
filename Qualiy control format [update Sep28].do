@@ -393,7 +393,7 @@ drop if _merge == 2
 		save "$baseline/Data/near_dup_matchedid_`date'.dta", replace
 		restore
 	merge m:1 matched_hhid using "$baseline/Data/near_dup_matchedid_`date'.dta", gen(xxx) keep(master match)
-	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id)
+	gen err_red2_close_match = (pmatch > .9 & supervisor_id == match_supervisor_id) if Q1l_consent==1
 	note err_red2_close_match: More than 90% similarity in response to questions within the same supervisor, which is considered very high
 	note err_red2_close_match: Questions used: All variables
 	note matched_hhid: Matched hhid
@@ -437,7 +437,7 @@ drop if _merge == 2
 	egen n_cbsg_member_cbsg = rowtotal(Q3f_name*_cbsg)
 	egen n_cbsg_member_mkp = rowtotal(Q3f_name*_mkp)
 	egen n_cbsg_member = rowtotal(n_cbsg_member_cbsg n_cbsg_member_mkp)
-	gen err_red_no_cbsg_member = (inlist(n_cbsg_member, 0, .))
+	gen err_red_no_cbsg_member = (inlist(n_cbsg_member, 0, .)) if Q1l_consent==1
 	note err_red_no_cbsg_member: No individual is CBSG member, ensure at least one individual is selected for Q3f
 	note err_red_no_cbsg_member: Questions used: Roster Q3f_name in cbsg and mkp, Q1p
 	lab var err_red_no_cbsg_member "No individual is CBSG member, ensure at least one individual is selected for Q3f"
