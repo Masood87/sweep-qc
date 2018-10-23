@@ -38,8 +38,8 @@
 	*=============================================================
 
 	* Paste file names and run fix varnames
-global cbsgfile "SWEEP_CBSG_Final_2018_10_16_06_38_22_560655"
-global mkpfile "SWEEP_MPK_Final_2018_10_16_06_19_38_003926"
+global cbsgfile "SWEEP_CBSG_Final_2018_10_21_13_29_05_772239"
+global mkpfile "SWEEP_MPK_Final_2018_10_21_12_44_21_535881"
 *do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
 do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
