@@ -1,5 +1,5 @@
 library(tidyverse) 
-filename <- "SWEEP_MPK_Final_2018_10_04_22_56_30_869083.csv" 
+filename <- "SWEEP_MPK_Final_2018_10_30_14_16_30_909753.csv" 
 mkp <- read_csv(paste0("/Users/macbookair/Dropbox/SWEEP shared/Baseline QC Reports/Data/", filename)) 
 
 # parsing variable names and constract new variable names 
@@ -22,6 +22,29 @@ newvarnames <- data.frame(oldnames=fullnames, newnames=vnames, numerics=numerics
 # rename mkp file with new var names 
 colnames(mkp) <- newvarnames$newnames 
 
+# fix format issue of certain columns
+mkp$Q10m6[mkp$Q10m6=="Strongly disagree"] <- "1" 
+mkp$Q10m6[mkp$Q10m6=="Disagree"] <- "2" 
+mkp$Q10m6[mkp$Q10m6=="Neither agree nor disagree"] <- "3" 
+mkp$Q10m6[mkp$Q10m6=="Agree"] <- "4" 
+mkp$Q10m6[mkp$Q10m6=="Strongly agree"] <- "5" 
+mkp$Q10m6[mkp$Q10m6=="Do not know"] <- "98" 
+mkp$Q10m6[mkp$Q10m6=="Refuse to answer"] <- "99" 
+mkp$Q10m6 <- as.numeric(mkp$Q10m6) 
+
+mkp$Q5a[mkp$Q5a=="Single family house"] <- "1" 
+mkp$Q5a[mkp$Q5a=="Part of a shared house/Compound"] <- "2" 
+mkp$Q5a[mkp$Q5a=="Separate apartment"] <- "3" 
+mkp$Q5a[mkp$Q5a=="Shared apartment"] <- "4" 
+mkp$Q5a[mkp$Q5a=="Tent"] <- "5" 
+mkp$Q5a[mkp$Q5a=="Temporary shelter/shack/hut"] <- "6" 
+mkp$Q5a[mkp$Q5a=="Other"] <- "96" 
+
+mkp$Q5m9[mkp$Q5m9=="Yes"] <- "1" 
+mkp$Q5m9[mkp$Q5m9=="No"] <- "0" 
+mkp$Q5m9[mkp$Q5m9=="Do not know"] <- "98" 
+mkp$Q5m9[mkp$Q5m9=="Refuse to answer"] <- "99" 
+
 # remove alpha characters from simserial variable 
 mkp$simserial <- gsub("n/a", "", mkp$simserial) 
 mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial) 
@@ -29,4 +52,4 @@ mkp$simserial <- gsub("[a-zA-Z]", "", mkp$simserial)
 # remove objects 
 # rm(list = c("fullnames", "last1", "last2", "vnames", "numerics", "inside_pranth_1", "inside_pranth_2", "dup", "dup2", "filename", "newvarnames")) 
 
-write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%u%b%Y"), ".csv"), na = "") 
+write_csv(mkp, paste0("~/Dropbox/SWEEP shared/Baseline QC Reports/Data/mkp_subset__", format(Sys.time(), "%d%b%Y"), ".csv"), na = "") 

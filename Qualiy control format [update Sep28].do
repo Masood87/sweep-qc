@@ -38,10 +38,10 @@
 	*=============================================================
 
 	* Paste file names and run fix varnames
-global cbsgfile "SWEEP_CBSG_Final_2018_10_21_13_29_05_772239"
-global mkpfile "SWEEP_MPK_Final_2018_10_21_12_44_21_535881"
-*do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
-do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
+global cbsgfile "SWEEP_CBSG_Final_2018_11_02_11_31_36_987274"
+global mkpfile "SWEEP_MPK_Final_2018_11_02_11_19_12_027878"
+do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
+*do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
@@ -314,8 +314,17 @@ drop if _merge == 2
 	lab var err_red_qui_intw_mkp "Length of MKP interview is 20min or less (too short)"
 *	lab var err_yellow_slow_intw_cbsg "Length of CBSG interview is 4hrs or more (too long)"
 *	lab var err_yellow_slow_intw_mkp "Length of MKP interview is 3hrs or more (too long)"
-	
+***> fix err_red_numhhmem based on AKF comments
+	replace err_red_qui_intw_cbsg = 0 if err_red_qui_intw_cbsg==1 & inlist(hhid,59030,32031,71062,180041,31010,504050,187051)
+	replace err_red_qui_intw_mkp = 0 if err_red_qui_intw_mkp==1 & inlist(hhid,82102,160122,555050,213030,431070,204041,416022,411121,18111,127080,411070,18150,321011,321071,187051)
+***>
+
 	* (red) error 2: Number of household members differs between MKP and CBSG surveys by more than 1
+***> fix err_red_numhhmem based on AKF comments
+	replace Q1n=Q2a_mkp if inlist(hhid,514120,181081,430052,181040,62181,364081,492171,183050,498050,208100,515091,81050,31010,59061,26040,26081,361062,19111,19021,361072,148071,76070,523071,125121,415151,304091,304041,112030,8061,237072,354161,407030,305062,77130)
+	replace Q1n=9 if hhid==199091
+	replace Q2a_mkp=9 if hhid==199091
+***>
 	gen Q2a = Q2a_cbsg if Q2a_cbsg == Q2a_mkp & !missing(Q2a_cbsg) & Q1p != 1
 	replace Q2a = Q2a_cbsg if missing(Q2a_mkp) & !missing(Q2a_cbsg)
 	replace Q2a = Q2a_mkp if missing(Q2a_cbsg) & !missing(Q2a_mkp)
@@ -324,6 +333,7 @@ drop if _merge == 2
 	note err_red_numhhmem: Number of household members differs between MKP and CBSG surveys by more than 1
 	note err_red_numhhmem: Questions used: Q1n Q2a_cbsg Q2a_mkp
 	lab var err_red_numhhmem "Number of household members differs between MKP and CBSG surveys by more than 1"
+	replace err_red_numhhmem = ((Q1n+1)<Q2a | (Q1n-1)>Q2a) if !missing(Q2a) & !missing(Q1n) & Q1p!=1
 	
 	* (red) error 2: check if number of household (Q2a) = names provided in the roster (Q2b)
 	foreach i of varlist Q2b* {
@@ -332,11 +342,20 @@ drop if _merge == 2
 	egen length_names_hh_members = rownonmiss(Q2b*), s
 	replace length_names_hh_members = length_names_hh_members/2 if Q2a_cbsg == Q2a_mkp & Q1p == 1
 	gen err_red2_hh_members = (length_names_hh_members != Q2a) if !missing(length_names_hh_members) & !missing(Q2a)
+	replace err_red2_hh_members = 0 if length_names_hh_members-1 == Q2a & err_red2_hh_members==1
 	note err_red2_hh_members: Number of hh members and number of name entries are unequal
 	note err_red2_hh_members: Questions used: Q2b-questions Q2a_cbsg Q2a_mkp
 	lab var err_red2_hh_members "Number of hh members and number of name entries are unequal"
+*>hhid==384130, MKP househole members are correct ?
 
 	* (red) error 3: Verify total hh income from past 30 days (Q2_estimate): reported value was >0 & <1000
+***> fix err_red_numhhmem based on AKF comments
+	replace Q2_estimate_cbsg = 12000 if inlist(hhid,229060,263130)
+	replace Q2_estimate_cbsg = 10000 if inlist(hhid,386010)
+	replace Q2_estimate_cbsg = 6000 if inlist(hhid,111120)
+	replace Q2_estimate_mkp = Q2_estimate_mkp*1000 if inlist(hhid,240022,515060,129051,147051)
+	replace Q2_estimate_mkp = Q2_estimate_mkp*10 if inlist(hhid,130030,394060,59030)
+***>
 	gen err_red_income_cbsg = (Q2_estimate_cbsg>0 & Q2_estimate_cbsg<1000)
 	gen err_red_income_mkp = (Q2_estimate_mkp>0 & Q2_estimate_mkp<1000)
 	note err_red_income_cbsg: Reported value was >0 & <1000: Verify total hh income from past 30 days in CBSG interview (Q2_estimate)
@@ -366,8 +385,10 @@ drop if _merge == 2
 	lab var err_yellow_spd_educ_incons "Inconsistent (>2000) report on education expenditure b/w CBSG and MKP members"
 	lab var err_yellow_extspd_educ "Spent 15k afghani or more on education, that is considered very high"
 
-*>>>> this is redundant because if Q1p!=1 then Q5a_cbsg==. and Q5a_mkp!=., if Q1p==1 then Q5a_cbsg!=. and Q5a_mkp!=.
 	* (red) error 6: inconsistent response about type of dwelling
+***> fix err_red_numhhmem based on AKF comments
+	replace Q5a_cbsg = Q5a_mkp if hhid==58011
+*>>>
 	gen err_red_dwlng_incons = (Q5a_cbsg != Q5a_mkp) if Q5a_cbsg != . & Q5a_mkp != .
 	replace err_red_dwlng_incons = 0 if missing(err_red_dwlng_incons) & ((Q5a_cbsg == . & Q5a_mkp != .) | (Q5a_cbsg != . & Q5a_mkp == .))
 	note err_red_dwlng_incons: CBSG and MKP provide inconsistent response about type of dwelling
@@ -410,34 +431,82 @@ drop if _merge == 2
 	lab var err_red_mkp_nt_missing "CBSG report self (Q1p==1) and MKP questionnaire is filled"
 	
 	* (red) error 10: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
-	gen err_red_mkp_missing = (Q1p != 1 & Q1p != . & match_bw_cbsg_mkp != 3)
+	gen err_red_mkp_missing = (Q1p != 1 & Q1p != . & match_bw_cbsg_mkp != 3) if survey_status>1 & survey_status!=3
 	note err_red_mkp_missing: CBSG doesn't report self (Q1p != 1) and MKP q're is missing
 	note err_red_mkp_missing: Questions used: Q1p and MKP Questionnaire
 	lab var err_red_mkp_missing "CBSG doesn't report self (Q1p != 1) and MKP q're is missing"
 	
 	* (red) error 11: More than one or no head of houshold, ensure that only one individual is selected in Q3a_name
+***> fix err_red_numhhmem based on AKF comments
+	foreach i of varlist Q3a_name* {
+		replace `i' = 1 - `i' if inlist(hhid,557171,182041,163161,114080,26040,474160,330070,289072)
+	}
+	replace Q3a_name1_mkp = 0 if inlist(hhid,144080)
+	replace Q3a_name1_mkp = 0 if inlist(hhid,172122)
+	replace Q3a_name3_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name4_mkp = 0 if inlist(hhid,203071,100060)
+	replace Q3a_name5_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name6_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name7_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name8_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name9_mkp = 0 if inlist(hhid,100060)
+	replace Q3a_name1_cbsg = 0 if inlist(hhid,477120,505102,29130,505172,14162,464190)
+	replace Q3a_name2_cbsg = 0 if inlist(hhid,252042,182041,220021,268071,522201,285090,506241,560012,531120,113230,58011)
+	replace Q3a_name3_cbsg = 0 if inlist(hhid,268071,529190,285090,335161,448121,520010)
+	replace Q3a_name4_cbsg = 0 if inlist(hhid,428120,268071)
+***> 
 	egen n_hoh_cbsg = rowtotal(Q3a_name*_cbsg)
 	egen n_hoh_mkp = rowtotal(Q3a_name*_mkp)
-	egen n_hoh = rowtotal(n_hoh_cbsg n_hoh_mkp)
-	gen err_red_incons_hoh = ((n_hoh_cbsg>1 | n_hoh_mkp>1) | n_hoh>1 | missing(n_hoh))
+	gen n_hoh = n_hoh_cbsg if n_hoh_mkp == 0 & n_hoh_cbsg > 0
+	replace n_hoh = n_hoh_mkp if n_hoh_cbsg == 0 & n_hoh_mkp > 0
+	replace n_hoh = n_hoh_cbsg if n_hoh_cbsg == n_hoh_mkp & Q1p == 1
+	replace n_hoh = n_hoh_mkp if n_hoh_cbsg == n_hoh_mkp & Q1p > 1
+	gen err_red_incons_hoh = (n_hoh>1 | missing(n_hoh))
 	note err_red_incons_hoh: More than one or no head of houshold, ensure that only one individual is selected in Q3a_name
-	note err_red_incons_hoh: Questions used: Roster Q3a_name in cbsg and mkp, and Q1p
+	note err_red_incons_hoh: Questions used: Roster Q2b and Q3a_name in cbsg and mkp, and Q1p
 	lab var err_red_incons_hoh "More than one or no head of houshold, ensure in Q3a_name only one individual is selected"
 	
 	* (red) error 12: More than one individual identified as respondent, ensure that only one individual is selected in Q3c
+***> fix err_red_numhhmem based on AKF comments
+	foreach i of varlist Q3c_name* {
+		replace `i' = 1 - `i' if inlist(hhid,557171,100060,114080,289072,216040,240012)
+	}
+	foreach i of varlist Q3c_name*cbsg {
+		replace `i' = 1 - `i' if inlist(hhid,474160)
+	}
+	replace Q3c_name1_mkp = 1 if inlist(hhid,100060)
+	replace Q3c_name2_mkp = 0 if inlist(hhid,100060)
+	replace Q3c_name3_mkp = 0 if inlist(hhid,544020)
+	replace Q3c_name6_mkp = 0 if inlist(hhid,544020)
+	replace Q3c_name1_cbsg = 0 if inlist(hhid,51122)
+	replace Q3c_name2_cbsg = 0 if inlist(hhid,308111)
+	replace Q3c_name7_cbsg = 0 if inlist(hhid,529190)
+***>
 	egen n_self_resp_cbsg = rowtotal(Q3c_name*_cbsg)
 	egen n_self_resp_mkp = rowtotal(Q3c_name*_mkp)
-	egen n_self_resp = rowtotal(n_self_resp_cbsg n_self_resp_mkp)
-	gen err_red_incons_self_resp = ((n_self_resp_cbsg>1 | n_self_resp_mkp>1) | n_self_resp>1 | missing(n_self_resp))
+	gen n_self_resp = n_self_resp_cbsg if n_self_resp_mkp == 0 & n_self_resp_cbsg > 0
+	replace n_self_resp = n_self_resp_mkp if n_self_resp_cbsg == 0 & n_self_resp_mkp > 0
+	replace n_self_resp = n_self_resp_cbsg if n_self_resp_cbsg == n_self_resp_mkp & Q1p == 1
+	replace n_self_resp = n_self_resp_mkp if n_self_resp_cbsg == n_self_resp_mkp & Q1p > 1
+	gen err_red_incons_self_resp = (n_self_resp>1 | missing(n_self_resp))
 	note err_red_incons_self_resp: More than one individual identified as respondent, ensure that only one individual is selected in Q3c
-	note err_red_incons_self_resp: Questions used: Roster Q3c_name in cbsg and mkp, and Q1p
+	note err_red_incons_self_resp: Questions used: Roster Q2b and Q3c_name in cbsg and mkp, and Q1p
 	lab var err_red_incons_self_resp "More than one individual identified as respondent, ensure that only one individual is selected in Q3c"
 	
 	* (red) error 13: No individual is CBSG member, ensure at least one individual is selected for Q3f
+***> fix err_red_numhhmem based on AKF comments
+	foreach i of varlist Q3f_name*_mkp {
+		replace `i' = 1 - `i' if inlist(hhid,554052,319201)
+	}
+***>
+	cap drop n_cbsg_member* err_red_no_cbsg_member
 	egen n_cbsg_member_cbsg = rowtotal(Q3f_name*_cbsg)
 	egen n_cbsg_member_mkp = rowtotal(Q3f_name*_mkp)
-	egen n_cbsg_member = rowtotal(n_cbsg_member_cbsg n_cbsg_member_mkp)
-	gen err_red_no_cbsg_member = (inlist(n_cbsg_member, 0, .)) if Q1l_consent==1
+	gen n_cbsg_member = n_cbsg_member_cbsg if n_cbsg_member_mkp == 0 & n_cbsg_member_cbsg > 0
+	replace n_cbsg_member = n_cbsg_member_mkp if n_cbsg_member_cbsg == 0 & n_cbsg_member_mkp > 0
+	replace n_cbsg_member = n_cbsg_member_cbsg if n_cbsg_member_cbsg == n_cbsg_member_mkp & Q1p == 1
+	replace n_cbsg_member = n_cbsg_member_mkp if n_cbsg_member_cbsg == n_cbsg_member_mkp & Q1p > 1
+	gen err_red_no_cbsg_member = (n_cbsg_member>1 | missing(n_cbsg_member))
 	note err_red_no_cbsg_member: No individual is CBSG member, ensure at least one individual is selected for Q3f
 	note err_red_no_cbsg_member: Questions used: Roster Q3f_name in cbsg and mkp, Q1p
 	lab var err_red_no_cbsg_member "No individual is CBSG member, ensure at least one individual is selected for Q3f"
