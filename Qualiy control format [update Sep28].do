@@ -25,6 +25,7 @@
 			global mystart "C:\Users\"
 			}
 	
+	set maxvar 9000
 	
 	local date : di %tdDmCY daily(c(current_date), "DMY")
 	local yesterday : di %tdDmCY daily(c(current_date), "DMY") - 1
@@ -40,8 +41,8 @@
 	* Paste file names and run fix varnames
 global cbsgfile "SWEEP_CBSG_Final_2018_11_02_11_31_36_987274"
 global mkpfile "SWEEP_MPK_Final_2018_11_02_11_19_12_027878"
-do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
-*do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
+*do "$baseline/Do-files/Other do-files/fix varnames.do"					// fix varnames + SUBSET
+do "$baseline/Do-files/Other do-files/fix varnames without subset"		// fix varnames + FULL SET
 
 	* import raw CBSG data (csv format)
 local cbsg_raw_data "$baseline/Data/cbsg_subset__`date'"
@@ -400,7 +401,7 @@ drop if _merge == 2
 	note err_red_cbsg_notmmr: CBSG member saying she/he is not a member of a CBSG
 	note err_red_cbsg_notmmr: Questions used: Q7g1
 	lab var err_red_cbsg_notmmr "CBSG member saying she/he is not a member of a CBSG"
-	
+/*	
 	* (red) error 8: more than 90% similarity in responses with another survey from the same supervisor
 	qui ds Q*, has(type numeric)
 	local numvars `r(varlist)'
@@ -423,7 +424,7 @@ drop if _merge == 2
 	lab var pmatch "Percent matched"
 	lab var err_red2_close_match "More than 90% similarity in response to questions within the same supervisor, which is considered very high"
 	cap rm "$baseline/Data/near_dup_matchedid_`yesterday'.dta"
-	
+*/	
 	* (red) error 9: CBSG report self (Q1p==1) and MKP questionnaire is filled
 	gen err_red_mkp_nt_missing = (Q1p == 1 & match_bw_cbsg_mkp == 3) if Q5m9_mkp != .
 	note err_red_mkp_nt_missing: CBSG report self (Q1p==1) and MKP questionnaire is filled
